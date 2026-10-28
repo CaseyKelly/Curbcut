@@ -2,12 +2,26 @@
 // CI provides a throwaway Postgres and runs `npm run db:migrate` first.
 import { AgentStep } from '@curbcut/core';
 import { eq } from 'drizzle-orm';
-import { afterAll, describe, expect, it } from 'vitest';
-import { agentRuns, agentSteps, createDb, explanations, issues, jobs, scans } from './index';
+import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import {
+  agentRuns,
+  agentSteps,
+  createDb,
+  type Db,
+  explanations,
+  issues,
+  jobs,
+  scans,
+} from './index';
 
 describe.skipIf(!process.env.DATABASE_URL)('schema', () => {
-  const db = createDb();
+  // Connect in beforeAll: the describe body still runs when the suite is skipped.
+  let db: Db;
   const createdScans: string[] = [];
+
+  beforeAll(() => {
+    db = createDb();
+  });
 
   afterAll(async () => {
     // Issues, runs, and steps cascade.
