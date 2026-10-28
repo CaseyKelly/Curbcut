@@ -69,6 +69,11 @@ export async function startGuardProxy(options: GuardOptions = {}): Promise<Guard
           (upstreamRes) => {
             res.writeHead(upstreamRes.statusCode ?? 502, upstreamRes.headers);
             upstreamRes.pipe(res);
+            // pipe() won't end `res` if the origin drops mid-body; without this the
+            // browser waits on a truncated resource until the page times out.
+            upstreamRes.on('close', () => {
+              if (!upstreamRes.complete) res.destroy();
+            });
           },
         );
         upstream.on('socket', (s) => {

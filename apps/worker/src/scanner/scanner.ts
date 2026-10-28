@@ -124,6 +124,10 @@ export class Scanner {
       this.timeoutMs,
       `axe did not finish within ${this.timeoutMs / 1000}s`,
     );
+    // The page may have navigated to a blocked host after loading (a script
+    // or meta refresh), leaving the proxy's 403 page where axe just ran.
+    const late = refused();
+    if (late) throw late;
     const issues = toA11yIssues(results, url, (ruleId, reason) =>
       console.warn(`skipped a ${ruleId} result on ${url} that doesn't fit A11yIssue: ${reason}`),
     );

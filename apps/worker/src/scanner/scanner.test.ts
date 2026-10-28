@@ -39,6 +39,21 @@ beforeAll(async () => {
           200,
           page(`<img alt="" src="http://private.test:${port}/secret"><img alt="" src="/hang">`),
         );
+      case '/truncated':
+        // Promises 1,000 bytes, sends 10, then drops the connection.
+        res.writeHead(200, { 'content-type': 'image/png', 'content-length': '1000' });
+        res.write(Buffer.alloc(10));
+        setTimeout(() => res.destroy(), 50);
+        return;
+      case '/with-truncated-image':
+        return send(200, page('<img alt="" src="/truncated">'));
+      case '/navigates-to-private':
+        return send(
+          200,
+          page(
+            `<script>setTimeout(() => { location.href = 'http://private.test:${port}/secret'; }, 100);</script>`,
+          ),
+        );
       case '/embeds-private':
         return send(200, page(`<img alt="" src="http://private.test:${port}/secret">`));
       default:
@@ -125,6 +140,18 @@ describe('Scanner', { timeout: 60_000 }, () => {
       'shutting down',
     );
     await racing.close();
+  });
+
+  it('refuses a page that navigates to a private address after loading', async () => {
+    await expect(scanner.scan(url('/navigates-to-private'))).rejects.toThrow(UnsafeUrlError);
+    expect(requested).not.toContain('/secret');
+  });
+
+  it('does not wait on a resource the origin cut off mid-body', async () => {
+    const quick = new Scanner({ ...guard, timeoutMs: 5_000 });
+    const result = await quick.scan(url('/with-truncated-image'));
+    await quick.close();
+    expect(result.axeVersion).toBeTruthy();
   });
 
   it('fails permanently on a 404', async () => {
