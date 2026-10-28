@@ -1,13 +1,21 @@
 <div align="center">
 
-# Curbcut
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/assets/banner-dark.svg">
+  <img src="docs/assets/banner-light.svg" alt="Curbcut: find accessibility bugs, understand them, and fix them in a pull request you approve." width="100%">
+</picture>
 
-**Find accessibility bugs, understand them, and fix them in a pull request you approve.**
+<br>
 
 [![CI](https://github.com/CaseyKelly/a11y-fixer/actions/workflows/ci.yml/badge.svg)](https://github.com/CaseyKelly/a11y-fixer/actions/workflows/ci.yml)
 ![WCAG 2.1 AA](https://img.shields.io/badge/WCAG-2.1%20AA-1f6feb)
+![Human approved fixes](https://img.shields.io/badge/fixes-human%20approved-d29922)
+![TypeScript](https://img.shields.io/badge/TypeScript-strict-3178c6?logo=typescript&logoColor=white)
+![Next.js](https://img.shields.io/badge/Next.js-000000?logo=nextdotjs&logoColor=white)
 ![Node 22](https://img.shields.io/badge/node-22-339933?logo=node.js&logoColor=white)
 ![Status: early development](https://img.shields.io/badge/status-early%20development-orange)
+
+[How it works](#how-it-works) · [Guardrails](#guardrails) · [Evals](#evals) · [Getting started](#getting-started) · [Status](#status)
 
 </div>
 
@@ -15,21 +23,42 @@
 
 Point Curbcut at a URL. An AI agent scans the page against WCAG 2.1 AA, tells you in plain language what's wrong and who it affects, finds the component in your repo that causes it, and drafts a minimal fix. **Nothing changes until a human approves the diff.** Then it opens a pull request and re-scans the preview deploy to check the fix worked.
 
+<p align="center">
+  <img src="docs/assets/scan-mockup.svg" alt="Concept mockup of a scan: 23 issues across 5 rules, from critical missing image alt text to a minor landmark issue, mapped to 6 React components, with 5 drafted fixes and 1 question waiting for review." width="760">
+</p>
+
+<details>
+<summary>Text version of the mockup</summary>
+
+```text
+$ curbcut scan https://shop.example.com
+
+  ✓ Loaded page in Chromium                 1.8s
+  ✓ axe-core · WCAG 2.1 AA                  23 issues · 5 rules
+
+  ● critical  image-alt        9  Images have no text alternative
+  ● serious   color-contrast   8  Text is hard to read (3.1:1)
+  ● serious   label            3  Form fields have no label
+  ● moderate  heading-order    2  Headings skip a level
+  ● minor     region           1  Content sits outside landmarks
+
+  → Mapped 23 issues to 6 React components
+  → Drafted 5 fixes and 1 question for you
+
+  Review at localhost:3000/scans/42   nothing changes until you approve
+```
+
+</details>
+
 > [!NOTE]
 > This README describes the design we're building toward. Most of it isn't implemented yet. See [Status](#status) for what works today.
 
 ## How it works
 
-```mermaid
-flowchart LR
-    A[🔗 URL] --> B[🔍 Scan<br/>Playwright + axe-core]
-    B --> C[💬 Explain<br/>grouped, prioritized,<br/>plain language]
-    C --> D[🧭 Map<br/>rendered HTML →<br/>source component]
-    D --> E[🩹 Propose<br/>minimal patch<br/>or ask a question]
-    E --> F{🙋 Human review<br/>edit · approve · reject}
-    F -->|approved| G[📬 Open PR]
-    G --> H[✅ Re-scan preview<br/>resolved · still there · new]
-```
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/assets/pipeline-dark.svg">
+  <img src="docs/assets/pipeline-light.svg" alt="Seven steps in a row: scan, explain, map, propose, review, ship, verify. Review is highlighted as the human gate." width="100%">
+</picture>
 
 | Step        | What happens                                                                                                                                                                |
 | ----------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -42,7 +71,23 @@ flowchart LR
 
 ## Guardrails
 
-An agent that writes to your repo needs limits. These are built into the design:
+An agent that writes to your repo needs limits. The most important one: the agent can propose changes, but only you can approve them.
+
+```text
+     AGENT                      YOU                          YOUR REPO
+  ───────────              ─────────────                  ───────────────
+
+  propose_patch ──diff──▶ ┌─────────────┐
+                          │   review    │
+                          │   edit      │ ──approve──▶ apply_patch ──▶ open_pr
+                          │   decide    │
+                          └──────┬──────┘
+                                 │ reject
+                                 ▼
+                             discarded
+```
+
+The rest of the guardrails in the design:
 
 - 🙋 **Human approval required.** `apply_patch` and `open_pr` refuse to run unless the specific patches have an approval record.
 - 🔐 **Secrets stay out of prompts.** Repos are shallow-cloned into a temp directory that's deleted after the run. `.env*` files, keys, and certs are on a denylist, and a secret scanner redacts anything else before it reaches the model. A test plants a fake secret and fails if it ever shows up in an LLM request.
@@ -100,3 +145,8 @@ We hold our own UI to the same standard: every page has to pass an axe scan with
 ## Team
 
 Built by **Casey Kelly** and **Upasana Kelly-Ajbani**.
+
+<div align="center">
+<br>
+<sub>Curb cuts were built for some people and turned out to help everyone. Accessible software works the same way.</sub>
+</div>
