@@ -56,34 +56,34 @@ export function matchInDocument(input: MatchInput, doc: Document = document): Ma
   }
   const elementsOf = (id: string) => byId.get(id) ?? [];
 
-  // Nodes inside iframes have a multi-part target; none are seeded.
-  const resolve = (n: AxeNode) => (n.target.length === 1 ? doc.querySelector(n.target[0]!) : null);
-  const violationEls = input.violations.map(resolve);
-
+  // Nodes inside iframes have a multi-part target; none are seeded. A target
+  // that doesn't resolve leaves its node unmatched, so it's reported as
+  // unexpected instead of aborting the scan.
+  const resolve = (n: AxeNode) => {
+    if (n.target.length !== 1) return null;
+    try {
+      return doc.querySelector(n.target[0]!);
+    } catch {
+      return null;
+    }
+  };
   // Every issue a node fits, so overlapping entries show up as ambiguous
   // instead of the first one silently taking the node.
-  const matches = input.violations.map((n, i) => {
-    const el = violationEls[i];
-    if (!el) return [];
-    return input.issues
-      .filter((s) => s.ruleId === n.ruleId && elementsOf(s.id).includes(el))
-      .map((s) => s.id);
-  });
+  const issuesFor = (n: AxeNode, el: Element | null) =>
+    el
+      ? input.issues
+          .filter((s) => s.ruleId === n.ruleId && elementsOf(s.id).includes(el))
+          .map((s) => s.id)
+      : [];
 
   const hits = [
-    ...input.violations.map((n, i) => ({
-      n,
-      el: violationEls[i] ?? null,
-      kind: 'violation' as const,
-      issueIds: matches[i]!,
-    })),
-    ...input.incomplete.map((n) => ({
-      n,
-      el: resolve(n),
-      kind: 'incomplete' as const,
-      issueIds: [] as string[],
-    })),
-  ];
+    ...input.violations.map((n) => ({ n, kind: 'violation' as const })),
+    ...input.incomplete.map((n) => ({ n, kind: 'incomplete' as const })),
+  ].map((h) => {
+    const el = resolve(h.n);
+    return { ...h, el, issueIds: issuesFor(h.n, el) };
+  });
+  const matches = hits.filter((h) => h.kind === 'violation').map((h) => h.issueIds);
 
   // A pattern is broken by a violation or an incomplete result on or inside
   // it, or by a container violation on an ancestor, unless the manifest says
@@ -118,7 +118,7 @@ export interface Summary {
 
 export function summarize(
   issues: { id: string; ruleId: string; nodes: number }[],
-  patternCount: number,
+  patterns: { id: string }[],
   violations: AxeNode[],
   result: MatchResult,
   missingFiles: string[] = [],
@@ -164,7 +164,7 @@ export function summarize(
     '',
     failed
       ? 'Scan does not match the manifest.'
-      : `All ${issues.length} seeded issues found, ${patternCount} correct patterns clean, nothing unexpected.`,
+      : `All ${issues.length} seeded issues found, ${patterns.length} correct patterns clean, nothing unexpected.`,
   );
   return { failed, lines };
 }

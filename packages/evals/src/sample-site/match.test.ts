@@ -34,7 +34,7 @@ const healthy: AxeNode[] = [
   { ruleId: 'button-name', target: ['.unnamed'] },
 ];
 
-const run = (overrides: Partial<MatchInput> = {}) => {
+const run = (overrides: Partial<MatchInput> = {}, missingFiles: string[] = []) => {
   const input: MatchInput = {
     issues,
     patterns,
@@ -44,7 +44,14 @@ const run = (overrides: Partial<MatchInput> = {}) => {
     ...overrides,
   };
   const result = matchInDocument(input, document);
-  return { result, summary: summarize(input.issues as typeof issues, 2, input.violations, result) };
+  const summary = summarize(
+    input.issues as typeof issues,
+    input.patterns,
+    input.violations,
+    result,
+    missingFiles,
+  );
+  return { result, summary };
 };
 
 describe('matchInDocument + summarize', () => {
@@ -141,6 +148,29 @@ describe('matchInDocument + summarize', () => {
       { patternId: 'link', ruleId: 'list', kind: 'violation' },
     ]);
   });
+
+  it('applies insideIssues to incomplete container results too', () => {
+    const { result } = run({ incomplete: [{ ruleId: 'list', target: ['.grid'] }] });
+    expect(result.flaggedPatterns).toEqual([]);
+  });
+
+  it('treats an axe target that does not resolve as unexpected', () => {
+    const { summary } = run({
+      violations: [...healthy, { ruleId: 'image-alt', target: ['::bogus('] }],
+    });
+    expect(summary.lines.join('\n')).toMatch(/Unexpected violations[\s\S]*image-alt\s+::bogus\(/);
+  });
+
+  it('fails when a manifest file is missing', () => {
+    const { summary } = run({}, ['photo-alt (src/Gone.tsx)']);
+    expect(summary.failed).toBe(true);
+    expect(summary.lines).toContain('  photo-alt (src/Gone.tsx)');
+  });
+
+  it('counts the patterns it was given in the summary', () => {
+    const { summary } = run({ patterns: [patterns[1]!] });
+    expect(summary.lines.at(-1)).toMatch(/1 correct patterns clean/);
+  });
 });
 
 describe('SampleSiteManifest', () => {
@@ -157,5 +187,18 @@ describe('SampleSiteManifest', () => {
     const bad = structuredClone(manifest);
     bad.correctPatterns[0]!.insideIssues = ['no-such-issue'];
     expect(SampleSiteManifest.safeParse(bad).success).toBe(false);
+  });
+
+  it('rejects duplicate ids across issues and patterns', () => {
+    const bad = structuredClone(manifest) as {
+      issues: { id: string }[];
+      correctPatterns: { id: string }[];
+    };
+    bad.correctPatterns[0]!.id = bad.issues[0]!.id;
+    const result = SampleSiteManifest.safeParse(bad);
+    expect(result.success).toBe(false);
+    expect(result.error?.issues.map((i) => i.message)).toContainEqual(
+      expect.stringMatching(/^Duplicate ids: /),
+    );
   });
 });

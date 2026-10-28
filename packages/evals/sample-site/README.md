@@ -32,7 +32,7 @@ Seeded bugs must not depend on UI state. A bug that only shows while, say, an ac
 
 ## The scan
 
-`src/sample-site/scan.ts` builds the site, serves the build with `vite preview`, loads the page in Chromium, runs axe, and passes the results to `matchInDocument` (`src/sample-site/match.ts`), which runs in the page and matches every node to a manifest entry by rule and selector. It fails when:
+`src/sample-site/scan.ts` builds the site into a temp directory (so the fixture is never written to), serves it with `vite preview`, loads the page in Chromium and waits for its iframe to load, runs axe, and passes the results to `matchInDocument` (`src/sample-site/match.ts`), which runs in the page and matches every node to a manifest entry by rule and selector. It fails when:
 
 - a seeded issue is not found, or is flagged on more or fewer elements than its `nodes`
 - axe reports a violation that is not in the manifest
@@ -40,7 +40,7 @@ Seeded bugs must not depend on UI state. A bug that only shows while, say, an ac
 - a manifest selector is invalid or matches nothing, or a violation matches more than one issue
 - a manifest `file` or `relatedFiles` path doesn't exist, two entries share an id, or `insideIssues` names an unknown issue
 
-`match.test.ts` covers each of these failures under jsdom, and CI runs the scan on every PR so the site and the manifest can't drift apart.
+`match.test.ts` covers each of these failures under jsdom (missing files and duplicate ids included), and CI runs the scan on every PR so the site and the manifest can't drift apart.
 
 ## Editing the site
 

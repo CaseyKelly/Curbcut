@@ -5,7 +5,8 @@
 //
 // Run with `npm run scan:sample-site`. Needs Chromium:
 // `npx playwright install chromium`.
-import { existsSync, readFileSync } from 'node:fs';
+import { existsSync, mkdtempSync, readFileSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import AxeBuilder from '@axe-core/playwright';
@@ -28,13 +29,21 @@ const missingFiles = [...manifest.issues, ...manifest.correctPatterns].flatMap((
 );
 
 // A production build served statically, so no dependency discovery or HMR
-// reload can change the page while axe runs.
-await build({ root: siteRoot, logLevel: 'error' });
-const server = await preview({ root: siteRoot, logLevel: 'error', preview: { port: 0 } });
-
+// reload can change the page while axe runs. It goes to a temp directory so
+// the scan never writes into the fixture, which must stay exactly what the
+// agent sees in repo mode.
+const outDir = mkdtempSync(join(tmpdir(), 'fernleaf-'));
+let server: Awaited<ReturnType<typeof preview>> | undefined;
 let browser: Browser | undefined;
 let failed = false;
 try {
+  await build({ root: siteRoot, logLevel: 'error', build: { outDir, emptyOutDir: true } });
+  server = await preview({
+    root: siteRoot,
+    logLevel: 'error',
+    build: { outDir },
+    preview: { port: 0 },
+  });
   const baseUrl = server.resolvedUrls?.local[0];
   if (!baseUrl) throw new Error('Vite did not report a local URL');
 
@@ -42,6 +51,15 @@ try {
   const page = await (await browser.newContext()).newPage();
   await page.goto(new URL(manifest.page, baseUrl).href);
   await page.locator('main').waitFor();
+  // The store map is an iframe; let it finish loading so axe sees its title
+  // and contents rather than an empty frame.
+  await page.waitForFunction(() =>
+    [...document.querySelectorAll('iframe')].every(
+      (f) =>
+        f.contentWindow?.location.href !== 'about:blank' &&
+        f.contentDocument?.readyState === 'complete',
+    ),
+  );
 
   const results = await new AxeBuilder({ page }).withTags([...AXE_WCAG_TAGS]).analyze();
   const toNodes = (list: typeof results.violations): AxeNode[] =>
@@ -59,7 +77,7 @@ try {
 
   const summary = summarize(
     manifest.issues,
-    manifest.correctPatterns.length,
+    manifest.correctPatterns,
     violations,
     result,
     missingFiles,
@@ -71,6 +89,7 @@ try {
   failed = summary.failed;
 } finally {
   await browser?.close();
-  await server.close();
+  await server?.close();
+  rmSync(outDir, { recursive: true, force: true });
 }
 process.exit(failed ? 1 : 0);
