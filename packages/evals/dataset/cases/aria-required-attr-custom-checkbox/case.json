@@ -1,5 +1,7 @@
 {
   "id": "aria-required-attr-custom-checkbox",
+  "version": 1,
+  "framework": "react",
   "description": "A div with role=\"checkbox\" has no aria-checked. A native checkbox is the better fix.",
   "category": "aria",
   "tags": [],

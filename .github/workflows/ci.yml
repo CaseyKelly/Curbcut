@@ -21,7 +21,6 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm run check
-      - run: npm run evals:validate
 
       # Sample-site scan. Chromium is cached per Playwright version. The
       # system libraries live outside the cache, so install them on a hit too.

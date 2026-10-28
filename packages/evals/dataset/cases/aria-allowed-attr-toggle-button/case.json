@@ -1,5 +1,7 @@
 {
   "id": "aria-allowed-attr-toggle-button",
+  "version": 1,
+  "framework": "react",
   "description": "A toggle button uses aria-checked, which buttons don't support. It should use aria-pressed.",
   "category": "aria",
   "tags": [],

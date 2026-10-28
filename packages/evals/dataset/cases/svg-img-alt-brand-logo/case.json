@@ -1,5 +1,7 @@
 {
   "id": "svg-img-alt-brand-logo",
+  "version": 1,
+  "framework": "react",
   "description": "A logo SVG has role=\"img\" but no name. The visible brand name already names the link, so the SVG can be hidden or labelled.",
   "category": "images",
   "tags": [],

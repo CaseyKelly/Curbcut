@@ -1,5 +1,7 @@
 {
   "id": "image-alt-empty-alt-is-correct",
+  "version": 1,
+  "framework": "react",
   "description": "Stale report: the decorative quote mark already has alt=\"\". Adding descriptive alt text would make it worse.",
   "category": "images",
   "tags": [],
@@ -14,7 +16,7 @@
     ],
     "pageUrl": "http://localhost/",
     "selector": "img",
-    "html": "<img src=\"/quote-mark.svg\" class=\"quote-mark\">",
+    "html": "<img class=\"quote-mark\" src=\"/quote-mark.svg\">",
     "failureSummary": "Fix any of the following:\n  Element does not have an alt attribute\n  aria-label attribute does not exist or is empty\n  aria-labelledby attribute does not exist, references elements that do not exist or references elements that are empty\n  Element has no title attribute\n  Element's default semantics were not overridden with role=\"none\" or role=\"presentation\"",
     "fingerprint": "image-alt:img"
   },

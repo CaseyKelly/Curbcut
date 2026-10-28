@@ -1,5 +1,7 @@
 {
   "id": "button-name-hidden-text-is-correct",
+  "version": 1,
+  "framework": "react",
   "description": "Stale report: the icon button already has visually hidden text. Adding an aria-label would duplicate it.",
   "category": "names",
   "tags": [],

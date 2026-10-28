@@ -1,5 +1,7 @@
 {
   "id": "button-name-icon-dismiss",
+  "version": 1,
+  "framework": "react",
   "description": "An icon-only dismiss button has no accessible name.",
   "category": "names",
   "tags": [],

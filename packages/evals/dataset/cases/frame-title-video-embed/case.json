@@ -1,5 +1,7 @@
 {
   "id": "frame-title-video-embed",
+  "version": 1,
+  "framework": "react",
   "description": "An embedded video iframe has no title.",
   "category": "names",
   "tags": [],

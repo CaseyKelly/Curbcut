@@ -1,5 +1,7 @@
 {
   "id": "label-missing-email",
+  "version": 1,
+  "framework": "react",
   "description": "An email input has no label.",
   "category": "forms",
   "tags": [],
@@ -14,7 +16,7 @@
     ],
     "pageUrl": "http://localhost/",
     "selector": "input",
-    "html": "<input type=\"email\" autocomplete=\"email\" name=\"email\">",
+    "html": "<input autocomplete=\"email\" type=\"email\" name=\"email\">",
     "failureSummary": "Fix any of the following:\n  Element does not have an implicit (wrapped) <label>\n  Element does not have an explicit <label>\n  aria-label attribute does not exist or is empty\n  aria-labelledby attribute does not exist, references elements that do not exist or references elements that are empty\n  Element has no title attribute\n  Element has no placeholder attribute\n  Element's default semantics were not overridden with role=\"none\" or role=\"presentation\"",
     "fingerprint": "label:input"
   },

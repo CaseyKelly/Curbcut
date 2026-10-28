@@ -1,5 +1,7 @@
 {
   "id": "label-visually-hidden-is-correct",
+  "version": 1,
+  "framework": "react",
   "description": "Stale report: the search input already has a visually hidden label. A visible label isn't required.",
   "category": "forms",
   "tags": [],

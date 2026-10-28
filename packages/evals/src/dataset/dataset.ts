@@ -2,11 +2,11 @@
 // folder under cases/<id>/ holding case.json (an EvalCase), input/ with the
 // broken file, an optional expected/ with a reference fix, and an optional
 // test.tsx. manifest.json lists every case and the dataset version.
-import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { EvalCase, Slug } from '@curbcut/core';
 import { z } from 'zod';
-import { changedLines, changesOutside, splitLines } from './lines.ts';
+import { changesOutside, sameLines, splitLines } from './lines.ts';
 
 export const DatasetManifest = z
   .strictObject({
@@ -20,7 +20,13 @@ export const DatasetManifest = z
   });
 export type DatasetManifest = z.infer<typeof DatasetManifest>;
 
-const CASE_ENTRIES = new Set(['case.json', 'input', 'expected', 'test.tsx']);
+/** What a case folder may hold, and whether each entry is a file or a folder. */
+const CASE_ENTRIES: Record<string, 'file' | 'folder'> = {
+  'case.json': 'file',
+  input: 'folder',
+  expected: 'folder',
+  'test.tsx': 'file',
+};
 
 export type LoadedCase = { dir: string; case: EvalCase };
 export type DatasetReport = {
@@ -45,9 +51,17 @@ function validateCase(dir: string, folder: string): { case?: EvalCase; errors: s
   const errors: string[] = [];
   const fail = (msg: string) => errors.push(`${folder}: ${msg}`);
 
-  for (const entry of readdirSync(dir)) {
-    if (!CASE_ENTRIES.has(entry)) fail(`unexpected entry "${entry}"`);
+  let badEntry = false;
+  for (const entry of readdirSync(dir, { withFileTypes: true })) {
+    const kind = Object.hasOwn(CASE_ENTRIES, entry.name) ? CASE_ENTRIES[entry.name] : undefined;
+    if (!kind) {
+      fail(`unexpected entry "${entry.name}"`);
+    } else if (kind === 'folder' ? !entry.isDirectory() : !entry.isFile()) {
+      fail(`${entry.name} must be a ${kind}`);
+      badEntry = true;
+    }
   }
+  if (badEntry) return { errors };
   const casePath = join(dir, 'case.json');
   if (!existsSync(casePath)) {
     fail('missing case.json');
@@ -68,13 +82,19 @@ function validateCase(dir: string, folder: string): { case?: EvalCase; errors: s
   const c = parsed.data;
   if (c.id !== folder) fail(`id "${c.id}" does not match its folder`);
 
+  // input/ holds exactly the file the agent sees: anything else would be
+  // extra context for the agent, or even the answer. (sourceFiles are
+  // repo-mode paths into the sample site, checked by the repo-mode cases, #25.)
   const inputDir = join(dir, 'input');
-  const inputPath = join(inputDir, c.filePath);
-  if (!existsSync(inputPath) || !statSync(inputPath).isFile()) {
+  const inputFiles = existsSync(inputDir) ? listFiles(inputDir) : [];
+  if (!inputFiles.includes(c.filePath)) {
     fail(`input/${c.filePath} does not exist`);
     return { case: c, errors };
   }
-  const input = readFileSync(inputPath, 'utf8');
+  const extra = inputFiles.filter((f) => f !== c.filePath);
+  if (extra.length > 0)
+    fail(`input/ must hold only ${c.filePath}, also found: ${extra.join(', ')}`);
+  const input = readFileSync(join(inputDir, c.filePath), 'utf8');
   const lineCount = splitLines(input).length;
   for (const r of c.allowedLines ?? []) {
     if (r.end > lineCount) {
@@ -82,9 +102,6 @@ function validateCase(dir: string, folder: string): { case?: EvalCase; errors: s
         `allowedLines ${r.start}-${r.end} runs past the end of ${c.filePath} (${lineCount} lines)`,
       );
     }
-  }
-  for (const f of c.sourceFiles ?? []) {
-    if (!existsSync(join(inputDir, f))) fail(`sourceFiles: input/${f} does not exist`);
   }
 
   const expectedDir = join(dir, 'expected');
@@ -97,11 +114,10 @@ function validateCase(dir: string, folder: string): { case?: EvalCase; errors: s
         fail(`expected/ must hold only ${c.filePath}, found: ${files.join(', ') || 'nothing'}`);
       } else {
         const expected = readFileSync(join(expectedDir, c.filePath), 'utf8');
-        const changes = changedLines(input, expected);
-        if (changes.removed.length === 0 && changes.insertedAfter.length === 0) {
+        if (sameLines(input, expected)) {
           fail(`expected/${c.filePath} is the same as the input`);
         }
-        for (const out of changesOutside(changes, c.allowedLines ?? [])) {
+        for (const out of changesOutside(input, expected, c.allowedLines ?? [])) {
           fail(`expected/${c.filePath} ${out}, outside allowedLines`);
         }
       }

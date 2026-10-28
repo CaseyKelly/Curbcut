@@ -1,5 +1,7 @@
 {
   "id": "image-alt-product-photo",
+  "version": 1,
+  "framework": "react",
   "description": "A product photo has no alt attribute. The product name is the right alt text.",
   "category": "images",
   "tags": [],
@@ -14,7 +16,7 @@
     ],
     "pageUrl": "http://localhost/",
     "selector": "img",
-    "html": "<img src=\"/plants/boston-fern.jpg\" width=\"240\" height=\"240\">",
+    "html": "<img width=\"240\" height=\"240\" src=\"/plants/boston-fern.jpg\">",
     "failureSummary": "Fix any of the following:\n  Element does not have an alt attribute\n  aria-label attribute does not exist or is empty\n  aria-labelledby attribute does not exist, references elements that do not exist or references elements that are empty\n  Element has no title attribute\n  Element's default semantics were not overridden with role=\"none\" or role=\"presentation\"",
     "fingerprint": "image-alt:img"
   },

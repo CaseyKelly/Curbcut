@@ -1,5 +1,7 @@
 {
   "id": "color-contrast-light-button",
+  "version": 1,
+  "framework": "react",
   "description": "White text on a light green button fails 4.5:1 contrast.",
   "category": "contrast",
   "tags": [],
@@ -14,7 +16,7 @@
     ],
     "pageUrl": "http://localhost/",
     "selector": "button",
-    "html": "<button type=\"button\" style=\"background:#8fd18f;color:#ffffff;border:none;padding:8px 16px;font-size:16px\">Add to cart</button>",
+    "html": "<button type=\"button\" style=\"background: rgb(143, 209, 143); color: rgb(255, 255, 255); border-width: medium; border-style: none; border-color: currentcolor; border-image: none; padding: 8px 16px; font-size: 16px;\">Add to cart</button>",
     "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 1.79 (foreground color: #ffffff, background color: #8fd18f, font size: 12.0pt (16px), font weight: normal). Expected contrast ratio of 4.5:1",
     "fingerprint": "color-contrast:button"
   },

@@ -1,4 +1,4 @@
-import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
@@ -37,6 +37,8 @@ const writeCase = (id: string, overrides: Record<string, unknown> = {}) =>
     `cases/${id}/case.json`,
     JSON.stringify({
       id,
+      version: 1,
+      framework: 'react',
       description: 'An image with no alt.',
       category: 'images',
       filePath: 'Tile.tsx',
@@ -99,9 +101,27 @@ describe('validateDataset', () => {
     expect(errors()).toEqual([expect.stringContaining('runs past the end of Tile.tsx (7 lines)')]);
   });
 
-  it('rejects sourceFiles that do not exist', () => {
-    writeCase('image-alt', { sourceFiles: ['Card.tsx'] });
-    expect(errors()).toEqual(['image-alt: sourceFiles: input/Card.tsx does not exist']);
+  it('leaves repo-mode sourceFiles to the repo-mode cases', () => {
+    writeCase('image-alt', { sourceFiles: ['src/components/Tile.tsx'] });
+    expect(errors()).toEqual([]);
+  });
+
+  it('rejects extra files in input/', () => {
+    write('cases/image-alt/input/Old.tsx', INPUT);
+    write('cases/image-alt/input/notes/answer.md', 'alt="Fern"');
+    expect(errors()).toEqual([
+      'image-alt: input/ must hold only Tile.tsx, also found: Old.tsx, notes/answer.md',
+    ]);
+  });
+
+  it('reports a file where a folder belongs, and the reverse, without crashing', () => {
+    rmSync(join(root, 'cases/image-alt/expected'), { recursive: true });
+    write('cases/image-alt/expected', FIXED);
+    write('cases/image-alt/test.tsx/index.tsx', '');
+    expect(errors()).toEqual([
+      'image-alt: expected must be a folder',
+      'image-alt: test.tsx must be a file',
+    ]);
   });
 
   it('rejects unexpected entries in a case folder', () => {
@@ -121,8 +141,8 @@ describe('validateDataset', () => {
     ]);
   });
 
-  it('rejects a reference fix identical to the input', () => {
-    write('cases/image-alt/expected/Tile.tsx', INPUT);
+  it('rejects a reference fix identical to the input, line endings aside', () => {
+    write('cases/image-alt/expected/Tile.tsx', INPUT.replaceAll('\n', '\r\n'));
     expect(errors()).toEqual(['image-alt: expected/Tile.tsx is the same as the input']);
   });
 
@@ -136,7 +156,6 @@ describe('validateDataset', () => {
       'cases/image-alt/expected/Tile.tsx',
       INPUT.replace('      <img', '      <p>Fern</p>\n      <img'),
     );
-    writeCase('image-alt');
     expect(errors()).toEqual([]);
   });
 
@@ -166,9 +185,6 @@ describe('the real dataset', () => {
     const real = resolve(import.meta.dirname, '../../dataset');
     const report = validateDataset(real);
     expect(report.errors).toEqual([]);
-    const manifest = JSON.parse(readFileSync(join(real, 'manifest.json'), 'utf8')) as {
-      cases: string[];
-    };
-    expect(report.cases).toHaveLength(manifest.cases.length);
+    expect(report.cases).toHaveLength(report.manifest!.cases.length);
   });
 });

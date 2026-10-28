@@ -1,5 +1,7 @@
 {
   "id": "list-div-children",
+  "version": 1,
+  "framework": "react",
   "description": "An ordered list renders div children instead of li.",
   "category": "structure",
   "tags": [],

@@ -178,6 +178,10 @@ export type AgentStep = z.infer<typeof AgentStep>;
 // ---------------------------------------------------------------------------
 // Evals
 
+/** UI frameworks the agent and the evals support. Only React for now. */
+export const Framework = z.enum(['react']);
+export type Framework = z.infer<typeof Framework>;
+
 /** Inclusive, 1-based line range in the input file. */
 export const LineRange = z
   .strictObject({ start: z.int().positive(), end: z.int().positive() })
@@ -190,6 +194,9 @@ export type LineRange = z.infer<typeof LineRange>;
  */
 export const EvalCaseObject = z.strictObject({
   id: Slug,
+  /** Bumped whenever the case changes, so results are only compared like for like (#16). */
+  version: z.int().positive(),
+  framework: Framework,
   description: z.string().min(1),
   category: z.string().min(1),
   /** e.g. `smoke` for the fast tier (#14). */
@@ -241,6 +248,9 @@ export type EvalScores = z.infer<typeof EvalScores>;
 
 const resultBase = {
   caseId: z.string().min(1),
+  /** `datasetVersion` from the dataset manifest and the case's own `version`. */
+  datasetVersion: z.int().positive(),
+  caseVersion: z.int().positive(),
   /** (e) cost and latency, including whatever a crashed case spent. */
   costUsd: z.number().nonnegative(),
   latencyMs: z.int().nonnegative(),

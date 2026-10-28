@@ -1,5 +1,5 @@
 {
-  // Type-checks every case's input and reference fix, so the bugs are
+  // Type-checks every case's input, reference fix, and test, so the bugs are
   // accessibility bugs, not build errors. Scorer (b) needs inputs that compile.
   "extends": "../../../tsconfig.base.json",
   "compilerOptions": {
@@ -7,5 +7,5 @@
     "types": [],
     "jsx": "react-jsx"
   },
-  "include": ["cases/*/input/**/*.tsx", "cases/*/expected/**/*.tsx"]
+  "include": ["cases/*/input/**/*.tsx", "cases/*/expected/**/*.tsx", "cases/*/test.tsx"]
 }
