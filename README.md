@@ -67,7 +67,7 @@ $ curbcut scan https://shop.example.com
 | **Map**     | The agent pulls search terms out of the offending HTML (text, classes, ids, ARIA) and searches your repo to find the source file behind it.                                 |
 | **Propose** | For each issue, the agent returns a small diff, says no change is needed, or says it's unsure and asks a question. It shouldn't guess.                                      |
 | **Review**  | You see each diff next to its explanation and confidence score. Edit it inline, approve it, or reject it, one at a time or in bulk.                                         |
-| **Ship**    | Approved patches go to an `curbcut/<scan-id>` branch and a PR that explains every fix. Once the preview deploys, Curbcut scans it again and comments with the results.      |
+| **Ship**    | Approved patches go to a `curbcut/<scan-id>` branch and a PR that explains every fix. Once the preview deploys, Curbcut scans it again and comments with the results.       |
 
 ## Guardrails
 
