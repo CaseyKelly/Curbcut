@@ -1,0 +1,22 @@
+{
+  "id": "button-name-hidden-text-is-correct",
+  "description": "Stale report: the icon button already has visually hidden text. Adding an aria-label would duplicate it.",
+  "category": "names",
+  "tags": [],
+  "filePath": "SearchToggle.tsx",
+  "issue": {
+    "ruleId": "button-name",
+    "impact": "critical",
+    "help": "Buttons must have discernible text",
+    "helpUrl": "https://dequeuniversity.com/rules/axe/4.14/button-name?application=playwright",
+    "wcag": [
+      "4.1.2"
+    ],
+    "pageUrl": "http://localhost/",
+    "selector": "button",
+    "html": "<button type=\"button\" class=\"icon-button\"><svg width=\"20\" height=\"20\" viewBox=\"0 0 20 20\" aria-hidden=\"true\"><circle cx=\"9\" cy=\"9\" r=\"6\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\"></circle><path d=\"M14 14l4 4\" stroke=\"currentColor\" stroke-width=\"2\"></path></svg></button>",
+    "failureSummary": "Fix any of the following:\n  Element does not have inner text that is visible to screen readers\n  aria-label attribute does not exist or is empty\n  aria-labelledby attribute does not exist, references elements that do not exist or references elements that are empty\n  Element has no title attribute\n  Element does not have an implicit (wrapped) <label>\n  Element does not have an explicit <label>\n  Element's default semantics were not overridden with role=\"none\" or role=\"presentation\"",
+    "fingerprint": "button-name:button"
+  },
+  "expectedOutcome": "no_change_needed"
+}

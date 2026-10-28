@@ -1,0 +1,29 @@
+{
+  "id": "link-name-social-icon",
+  "description": "An Instagram link contains only a hidden SVG icon, so it has no accessible name.",
+  "category": "names",
+  "tags": [],
+  "filePath": "SocialLinks.tsx",
+  "issue": {
+    "ruleId": "link-name",
+    "impact": "serious",
+    "help": "Links must have discernible text",
+    "helpUrl": "https://dequeuniversity.com/rules/axe/4.14/link-name?application=playwright",
+    "wcag": [
+      "2.4.4",
+      "4.1.2"
+    ],
+    "pageUrl": "http://localhost/",
+    "selector": "li:nth-child(1) > a",
+    "html": "<a href=\"https://www.instagram.com/fernleaf.example\"><svg width=\"20\" height=\"20\" viewBox=\"0 0 20 20\" aria-hidden=\"true\"><rect x=\"2\" y=\"2\" width=\"16\" height=\"16\" rx=\"5\" fill=\"none\" stroke=\"currentColor\"></rect><circle cx=\"10\" cy=\"10\" r=\"4\" fill=\"none\" stroke=\"currentColor\"></circle></svg></a>",
+    "failureSummary": "Fix all of the following:\n  Element is in tab order and does not have accessible text\n\nFix any of the following:\n  Element does not have text that is visible to screen readers\n  aria-label attribute does not exist or is empty\n  aria-labelledby attribute does not exist, references elements that do not exist or references elements that are empty\n  Element has no title attribute",
+    "fingerprint": "link-name:li:nth-child(1) > a"
+  },
+  "expectedOutcome": "fix",
+  "allowedLines": [
+    {
+      "start": 7,
+      "end": 12
+    }
+  ]
+}

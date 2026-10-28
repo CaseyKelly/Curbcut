@@ -1,0 +1,28 @@
+{
+  "id": "aria-allowed-attr-toggle-button",
+  "description": "A toggle button uses aria-checked, which buttons don't support. It should use aria-pressed.",
+  "category": "aria",
+  "tags": [],
+  "filePath": "PetSafeFilter.tsx",
+  "issue": {
+    "ruleId": "aria-allowed-attr",
+    "impact": "critical",
+    "help": "Elements must only use supported ARIA attributes",
+    "helpUrl": "https://dequeuniversity.com/rules/axe/4.14/aria-allowed-attr?application=playwright",
+    "wcag": [
+      "4.1.2"
+    ],
+    "pageUrl": "http://localhost/",
+    "selector": "button",
+    "html": "<button type=\"button\" aria-checked=\"false\">Pet-safe plants only</button>",
+    "failureSummary": "Fix all of the following:\n  ARIA attribute is not allowed: aria-checked=\"false\"",
+    "fingerprint": "aria-allowed-attr:button"
+  },
+  "expectedOutcome": "fix",
+  "allowedLines": [
+    {
+      "start": 7,
+      "end": 7
+    }
+  ]
+}

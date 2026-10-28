@@ -1,0 +1,28 @@
+{
+  "id": "frame-title-video-embed",
+  "description": "An embedded video iframe has no title.",
+  "category": "names",
+  "tags": [],
+  "filePath": "RepottingVideo.tsx",
+  "issue": {
+    "ruleId": "frame-title",
+    "impact": "serious",
+    "help": "Frames must have an accessible name",
+    "helpUrl": "https://dequeuniversity.com/rules/axe/4.14/frame-title?application=playwright",
+    "wcag": [
+      "4.1.2"
+    ],
+    "pageUrl": "http://localhost/",
+    "selector": "iframe",
+    "html": "<iframe src=\"/videos/repotting-a-monstera.html\" width=\"560\" height=\"315\" allowfullscreen=\"\"></iframe>",
+    "failureSummary": "Fix any of the following:\n  Element has no title attribute\n  aria-label attribute does not exist or is empty\n  aria-labelledby attribute does not exist, references elements that do not exist or references elements that are empty\n  Element's default semantics were not overridden with role=\"none\" or role=\"presentation\"",
+    "fingerprint": "frame-title:iframe"
+  },
+  "expectedOutcome": "fix",
+  "allowedLines": [
+    {
+      "start": 5,
+      "end": 10
+    }
+  ]
+}

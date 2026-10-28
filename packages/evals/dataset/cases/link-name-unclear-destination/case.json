@@ -1,0 +1,23 @@
+{
+  "id": "link-name-unclear-destination",
+  "description": "An icon-only link in an order table has no name, and neither the icon nor the URL says whether it reorders, refunds, or returns. A human has to say what it does.",
+  "category": "names",
+  "tags": [],
+  "filePath": "OrderHistory.tsx",
+  "issue": {
+    "ruleId": "link-name",
+    "impact": "serious",
+    "help": "Links must have discernible text",
+    "helpUrl": "https://dequeuniversity.com/rules/axe/4.14/link-name?application=playwright",
+    "wcag": [
+      "2.4.4",
+      "4.1.2"
+    ],
+    "pageUrl": "http://localhost/",
+    "selector": "a",
+    "html": "<a href=\"/account/orders/10482/r\"><svg width=\"16\" height=\"16\" viewBox=\"0 0 16 16\" aria-hidden=\"true\"><path d=\"M2 8a6 6 0 1 0 2-4.5M2 2v4h4\" fill=\"none\" stroke=\"currentColor\"></path></svg></a>",
+    "failureSummary": "Fix all of the following:\n  Element is in tab order and does not have accessible text\n\nFix any of the following:\n  Element does not have text that is visible to screen readers\n  aria-label attribute does not exist or is empty\n  aria-labelledby attribute does not exist, references elements that do not exist or references elements that are empty\n  Element has no title attribute",
+    "fingerprint": "link-name:a"
+  },
+  "expectedOutcome": "unsure"
+}

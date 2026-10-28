@@ -1,0 +1,28 @@
+{
+  "id": "svg-img-alt-brand-logo",
+  "description": "A logo SVG has role=\"img\" but no name. The visible brand name already names the link, so the SVG can be hidden or labelled.",
+  "category": "images",
+  "tags": [],
+  "filePath": "Brand.tsx",
+  "issue": {
+    "ruleId": "svg-img-alt",
+    "impact": "serious",
+    "help": "<svg> elements with an img or image role must have alternative text",
+    "helpUrl": "https://dequeuniversity.com/rules/axe/4.14/svg-img-alt?application=playwright",
+    "wcag": [
+      "1.1.1"
+    ],
+    "pageUrl": "http://localhost/",
+    "selector": "svg",
+    "html": "<svg role=\"img\" width=\"32\" height=\"32\" viewBox=\"0 0 32 32\"><path d=\"M16 2C9 9 6 16 16 30C26 16 23 9 16 2Z\" fill=\"#2f6b3a\"></path></svg>",
+    "failureSummary": "Fix any of the following:\n  Element has no child that is a title\n  aria-label attribute does not exist or is empty\n  aria-labelledby attribute does not exist, references elements that do not exist or references elements that are empty\n  Element has no title attribute",
+    "fingerprint": "svg-img-alt:svg"
+  },
+  "expectedOutcome": "fix",
+  "allowedLines": [
+    {
+      "start": 4,
+      "end": 6
+    }
+  ]
+}

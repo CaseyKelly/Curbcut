@@ -1,0 +1,28 @@
+{
+  "id": "button-name-icon-dismiss",
+  "description": "An icon-only dismiss button has no accessible name.",
+  "category": "names",
+  "tags": [],
+  "filePath": "PromoBanner.tsx",
+  "issue": {
+    "ruleId": "button-name",
+    "impact": "critical",
+    "help": "Buttons must have discernible text",
+    "helpUrl": "https://dequeuniversity.com/rules/axe/4.14/button-name?application=playwright",
+    "wcag": [
+      "4.1.2"
+    ],
+    "pageUrl": "http://localhost/",
+    "selector": "button",
+    "html": "<button type=\"button\" class=\"icon-button\"><svg width=\"16\" height=\"16\" viewBox=\"0 0 16 16\" aria-hidden=\"true\"><path d=\"M3 3l10 10M13 3L3 13\" stroke=\"currentColor\" stroke-width=\"2\"></path></svg></button>",
+    "failureSummary": "Fix any of the following:\n  Element does not have inner text that is visible to screen readers\n  aria-label attribute does not exist or is empty\n  aria-labelledby attribute does not exist, references elements that do not exist or references elements that are empty\n  Element has no title attribute\n  Element does not have an implicit (wrapped) <label>\n  Element does not have an explicit <label>\n  Element's default semantics were not overridden with role=\"none\" or role=\"presentation\"",
+    "fingerprint": "button-name:button"
+  },
+  "expectedOutcome": "fix",
+  "allowedLines": [
+    {
+      "start": 9,
+      "end": 13
+    }
+  ]
+}

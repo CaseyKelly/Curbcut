@@ -1,0 +1,28 @@
+{
+  "id": "list-div-children",
+  "description": "An ordered list renders div children instead of li.",
+  "category": "structure",
+  "tags": [],
+  "filePath": "WateringSteps.tsx",
+  "issue": {
+    "ruleId": "list",
+    "impact": "serious",
+    "help": "<ul> and <ol> must only directly contain <li>, <script> or <template> elements",
+    "helpUrl": "https://dequeuniversity.com/rules/axe/4.14/list?application=playwright",
+    "wcag": [
+      "1.3.1"
+    ],
+    "pageUrl": "http://localhost/",
+    "selector": "ol",
+    "html": "<ol class=\"steps\"><div class=\"step\">Water thoroughly</div><div class=\"step\">Let the excess drain</div><div class=\"step\">Empty the saucer after 30 minutes</div></ol>",
+    "failureSummary": "Fix all of the following:\n  List element has direct children that are not allowed: div",
+    "fingerprint": "list:ol"
+  },
+  "expectedOutcome": "fix",
+  "allowedLines": [
+    {
+      "start": 8,
+      "end": 11
+    }
+  ]
+}

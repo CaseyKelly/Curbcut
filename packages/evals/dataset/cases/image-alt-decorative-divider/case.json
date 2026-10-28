@@ -1,0 +1,28 @@
+{
+  "id": "image-alt-decorative-divider",
+  "description": "A decorative divider image has no alt attribute. It should be hidden with alt=\"\", not described.",
+  "category": "images",
+  "tags": [],
+  "filePath": "CareGuide.tsx",
+  "issue": {
+    "ruleId": "image-alt",
+    "impact": "critical",
+    "help": "Images must have alternative text",
+    "helpUrl": "https://dequeuniversity.com/rules/axe/4.14/image-alt?application=playwright",
+    "wcag": [
+      "1.1.1"
+    ],
+    "pageUrl": "http://localhost/",
+    "selector": "img",
+    "html": "<img src=\"/divider-leaves.svg\" class=\"divider\">",
+    "failureSummary": "Fix any of the following:\n  Element does not have an alt attribute\n  aria-label attribute does not exist or is empty\n  aria-labelledby attribute does not exist, references elements that do not exist or references elements that are empty\n  Element has no title attribute\n  Element's default semantics were not overridden with role=\"none\" or role=\"presentation\"",
+    "fingerprint": "image-alt:img"
+  },
+  "expectedOutcome": "fix",
+  "allowedLines": [
+    {
+      "start": 6,
+      "end": 6
+    }
+  ]
+}
