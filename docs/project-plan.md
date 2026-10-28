@@ -23,7 +23,7 @@ The MVP scans one public URL, fixes React code, and is private to the two of us.
 | Build checks | Eval fixtures get typecheck, lint, and render checks. User repos get none in v1.                                                                                | Running other people's builds safely needs a sandbox. The PR's own CI covers it for now.                                         |
 | Hosting      | Next.js on Vercel, the worker on Fly.io, Postgres on Neon, Drizzle as the ORM.                                                                                  | Playwright needs a long-running container, which Vercel functions aren't. Drizzle schemas are plain TypeScript with visible SQL. |
 | Monorepo     | npm workspaces, no Turborepo.                                                                                                                                   | Idiomatic, with no extra tooling. We can add a build cache if CI gets slow.                                                      |
-| Workflow     | Claude writes the first draft of each milestone. You review and rewrite. Every PR needs the other person's review.                                              | Fast drafts, while you still own every line.                                                                                     |
+| Workflow     | Claude writes the first draft of each milestone. We review and rewrite. Every PR needs the other person's review.                                               | Fast drafts, while we still own every line.                                                                                      |
 | Repo         | A private repo, `Curbcut` (originally created as `a11y-fixer`). Casey owns it; Upasana is a collaborator with write access.                                     | The setup script in [GitHub setup](#github-setup) creates it.                                                                    |
 
 ## Architecture
@@ -60,7 +60,7 @@ Curbcut/
   docs/               test strategy, release checklist, decisions  (both)
 ```
 
-The contract is a set of Zod schemas in `packages/core`. Changing one needs both of your approvals (CODEOWNERS lists you both; GitHub only enforces one, so by convention whoever didn't write the change approves it).
+The contract is a set of Zod schemas in `packages/core`. Changing one needs approval from both Casey and Upasana (CODEOWNERS lists both; GitHub only enforces one, so by convention whoever didn't write the change approves it).
 
 | Schema                                                                                                                                                                                              | Produced by          | Consumed by                                    |
 | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------- | ---------------------------------------------- |
@@ -69,7 +69,7 @@ The contract is a set of Zod schemas in `packages/core`. Changing one needs both
 | `PatchProposal`: outcome, file, diff, explanation, confidence                                                                                                                                       | Agent                | Diff review UI, every eval scorer              |
 | `AgentStep`: a union of `thought`, `tool_call`, `tool_result`, and `end` (with the run's end reason). Per-step tokens and cost are planned for the `agent_steps` table but aren't in the schema yet | Agent loop           | Streaming UI, cost tracking, eval latency/cost |
 | `EvalCase`: one dataset entry                                                                                                                                                                       | Upasana's dataset    | Eval runner                                    |
-| `EvalResult`: per-case scores (a) through (e) and pass/fail                                                                                                                                         | Eval runner          | CI comment, evals dashboard                    |
+| `EvalResult`: per-case outcome and scores (a) through (e); pass is derived from the scores and stored in `eval_results.pass`                                                                        | Eval runner          | CI comment, evals dashboard                    |
 
 The schemas themselves live in [`packages/core/src/index.ts`](../packages/core/src/index.ts), which is authoritative; this plan doesn't copy them so the two can't drift. The objects are strict, so a field the plan mentions but the schema lacks is rejected until it's added there. Two points from the design:
 
@@ -106,7 +106,7 @@ URL mode is a plain pipeline. Only repo mode needs a real agent loop, because on
 
 **URL mode (pipeline, M1):** scan, then normalize, group, and prioritize the issues, then make one LLM call per rule group with a Zod-validated output. The calls run with limited concurrency and are cached by fingerprint.
 
-**Repo mode (agent loop, M3).** The loop is hand-rolled on the Anthropic Messages API, using tool use and streaming. It's about 150 lines, which is short enough for both of you to own. Each turn works like this:
+**Repo mode (agent loop, M3).** The loop is hand-rolled on the Anthropic Messages API, using tool use and streaming. It's about 150 lines, which is short enough for both of us to own. Each turn works like this:
 
 1. Call the model with the system prompt, the tools, and the history.
 2. Stream text and tool calls into `agent_steps` as they arrive.
@@ -120,7 +120,7 @@ URL mode is a plain pipeline. Only repo mode needs a real agent loop, because on
 | `search_repo`   | ripgrep across the repo for strings from the issue's HTML (text, class names, ids, aria attributes) | Result count and size capped                                                                 |
 | `propose_patch` | Records a `PatchProposal`                                                                           | The diff must apply cleanly and touch only the named file                                    |
 | `apply_patch`   | Applies approved patches to a new branch                                                            | Needs a human approval record the model cannot create; the run pauses in `awaiting_approval` |
-| `open_pr`       | Opens a PR with a summary of the fixes                                                              | Same approval gate; runs only after you click                                                |
+| `open_pr`       | Opens a PR with a summary of the fixes                                                              | Same approval gate; runs only after a person approves in the UI                              |
 
 How the production concerns are handled:
 
@@ -213,7 +213,7 @@ The plan is five milestones over six weekends. Each one ends with a review stop.
 | Basic eval runner with scorers (a), (b), (c), (e), run locally                             | Upasana |
 
 - **Files:** `apps/web`, `apps/worker`, `packages/{core,agent,db,evals}`, `fixtures/sample-site`, `docs/test-strategy.md`
-- **Risks:** the Playwright image size on Fly; noisy axe results on real sites; schema churn while both of you build against it.
+- **Risks:** the Playwright image size on Fly; noisy axe results on real sites; schema churn while both of us build against it.
 - **Done when:** scanning the sample site shows grouped, explained issues in our own app; our app passes axe; the runner prints a scored table for 20 cases.
 
 ### M2 · Evals in CI, first prompt iteration (weekend 3)
@@ -244,7 +244,7 @@ The plan is five milestones over six weekends. Each one ends with a review stop.
 
 - **Data model:** adds `repos` and `patches`.
 - **Risks:** mapping a rendered DOM element back to its source component is the hardest problem in the project; diff quality on large files.
-- **Done when:** on the sample repo, the agent proposes fixes for most issues, you can edit and approve them, and the mapping-accuracy score is tracked in evals.
+- **Done when:** on the sample repo, the agent proposes fixes for most issues, a reviewer can edit and approve them, and the mapping-accuracy score is tracked in evals.
 
 ### M4 · Apply, PR, re-scan, E2E (weekend 5)
 
@@ -318,6 +318,7 @@ None of these are in the six weekends. Each one has a seam in v1, so adding it l
 Open questions to settle during the build:
 
 - [ ] Is $20/month enough once the full eval tier runs weekly? M1 measures the real cost per case, and we'll decide by M2.
+- [ ] Where do repo-mode eval cases (M3, #25) keep their source? Either `input/` holds a small multi-file repo per case, or `input/` holds only the one file the agent sees and `sourceFiles` point into `fixtures/sample-site`. Settle before #25 starts and update the dataset section to match.
 - [ ] Which model for the fixer? We start with Sonnet 5.5 and let the M2 evals check whether Haiku 5.5 is good enough.
 
 ## Keeping this plan current
