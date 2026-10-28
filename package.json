@@ -3,14 +3,17 @@
   "private": true,
   "type": "module",
   "engines": {
-    "node": ">=22"
+    "node": ">=22.18"
   },
   "workspaces": [
     "apps/*",
-    "packages/*"
+    "packages/*",
+    "fixtures/*"
   ],
   "scripts": {
     "dev": "npm run dev -w @curbcut/web",
+    "sample-site": "npm run dev -w @curbcut/sample-site",
+    "scan:sample-site": "npm run scan:sample-site -w @curbcut/evals",
     "typecheck": "npm run typecheck --workspaces --if-present",
     "lint": "eslint .",
     "format": "prettier --write .",

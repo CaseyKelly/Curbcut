@@ -4,4 +4,5 @@ dist
 coverage
 package-lock.json
 packages/evals/dataset
-fixtures/sample-site
+fixtures/sample-site/src
+fixtures/sample-site/index.html

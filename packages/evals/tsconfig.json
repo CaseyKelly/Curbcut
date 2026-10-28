@@ -1,4 +1,10 @@
 {
   "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    // The sample-site matcher runs in the browser through page.evaluate.
+    "lib": ["ES2023", "DOM", "DOM.Iterable"],
+    // Scripts run with Node's type stripping, which needs explicit .ts imports.
+    "allowImportingTsExtensions": true
+  },
   "include": ["src"]
 }
