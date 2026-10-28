@@ -22,6 +22,7 @@ The MVP scans one public URL, fixes React code, and is private to the two of us.
 | Budget       | $20/month, enforced twice: a spend limit in the Anthropic console, and a budget guard in code that refuses new LLM work past the cap.                           | Two layers, so a bug can't run up a bill.                                                                                        |
 | Build checks | Eval fixtures get typecheck, lint, and render checks. User repos get none in v1.                                                                                | Running other people's builds safely needs a sandbox. The PR's own CI covers it for now.                                         |
 | Hosting      | Next.js on Vercel, the worker on Fly.io, Postgres on Neon, Drizzle as the ORM.                                                                                  | Playwright needs a long-running container, which Vercel functions aren't. Drizzle schemas are plain TypeScript with visible SQL. |
+| Scan SSRF    | The browser reaches the network only through a proxy in the worker that checks each request's resolved address (#5).                                            | Checking only the typed URL misses redirects, subresources, and DNS rebinding.                                                   |
 | Monorepo     | npm workspaces, no Turborepo.                                                                                                                                   | Idiomatic, with no extra tooling. We can add a build cache if CI gets slow.                                                      |
 | Workflow     | Claude writes the first draft of each milestone. We review and rewrite. Every PR needs the other person's review.                                               | Fast drafts, while we still own every line.                                                                                      |
 | Repo         | A private repo, `Curbcut` (originally created as `a11y-fixer`). Casey owns it; Upasana is a collaborator with write access.                                     | The setup script in [GitHub setup](#github-setup) creates it.                                                                    |
@@ -65,6 +66,7 @@ The contract is a set of Zod schemas in `packages/core`. Changing one needs appr
 | Schema                                                                                                                                                                                              | Produced by          | Consumed by                                    |
 | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------- | ---------------------------------------------- |
 | `A11yIssue`: a normalized axe violation (rule, impact, WCAG tags, selector, HTML, fingerprint)                                                                                                      | Scanner              | UI, agent, eval scorer (a)                     |
+| `ScanJobPayload`: the `jobs.payload` of a `scan` job (the scan's id)                                                                                                                                | Web app              | Worker                                         |
 | `IssueExplanation`: what's wrong, who it affects, why it matters, confidence                                                                                                                        | Explanation pipeline | UI, judge                                      |
 | `PatchProposal`: outcome, file, diff, explanation, confidence                                                                                                                                       | Agent                | Diff review UI, every eval scorer              |
 | `AgentStep`: a union of `thought`, `tool_call`, `tool_result`, and `end` (with the run's end reason). Per-step tokens and cost are planned for the `agent_steps` table but aren't in the schema yet | Agent loop           | Streaming UI, cost tracking, eval latency/cost |
@@ -94,10 +96,11 @@ The data model is eleven Postgres tables, and the job queue is one of them, so R
 | `eval_runs`     | One eval run              | git_sha, branch, trigger (pr, nightly, manual), dataset_version, model, prompt_hash, totals, cost_usd                                      | M2        | Upasana |
 | `eval_results`  | Per-case results          | run_id, case_id, case_version, resolved, build_ok, scope_ok, judge_score, judge_reason, cost_usd, latency_ms, pass                         | M2        | Upasana |
 
-Three details that matter:
+Four details that matter:
 
 - **Fingerprint.** A hash of rule + normalized selector + normalized HTML. It drives three things: the explanation cache, deduplicating issues across pages once crawling arrives, and the before/after comparison on a re-scan.
-- **Job claiming.** The worker claims jobs with `SELECT ... FOR UPDATE SKIP LOCKED`, which makes Postgres a safe queue. Jobs stuck in running with an old `locked_at` get retried, up to 3 attempts.
+- **Job claiming.** The worker claims jobs with `SELECT ... FOR UPDATE SKIP LOCKED`, which makes Postgres a safe queue. Each claim is an attempt. While a job runs, the worker refreshes `locked_at` every 30 s; a job whose lock is 2 minutes old is taken for abandoned. A failed or abandoned job is requeued with exponential backoff (30 s, then 60 s) until it has used its 3 attempts. Errors that a retry can't fix (a bad payload, a blocked URL, a 4xx page) fail the job at once. A job's results are written in the same transaction that marks it succeeded, after checking the worker still holds the lock, so a worker that lost its lock can't overwrite a retry.
+- **Scanner and SSRF.** Each scan loads its targets in a fresh Chromium context with a 60 s timeout and runs axe with the WCAG 2.1 A and AA tags. Every request the browser makes, not just the first, goes through a small proxy inside the worker that resolves the host once, refuses private, loopback, link-local, and other non-public addresses, and connects to the address it checked. That covers redirects, iframes, subresources, and DNS that changes after the first check.
 - **Edited diffs.** We store both the model's diff and the human-edited diff. The difference between them is free eval data later.
 
 ## Agent design
@@ -215,7 +218,7 @@ The plan is five milestones over six weekends. Each one ends with a review stop.
 | Basic eval runner with scorers (a), (b), (c), (e), run locally                             | Upasana |
 
 - **Files:** `apps/web`, `apps/worker`, `packages/{core,agent,db,evals}`, `fixtures/sample-site`, `docs/test-strategy.md`
-- **Risks:** the Playwright image size on Fly; noisy axe results on real sites; schema churn while both of us build against it.
+- **Risks:** the Playwright image size on Fly (the worker image, with only Chromium's headless shell, is about 1.3 GB); noisy axe results on real sites; schema churn while both of us build against it.
 - **Done when:** scanning the sample site shows grouped, explained issues in our own app; our app passes axe; the runner prints a scored table for 20 cases.
 
 ### M2 · Evals in CI, first prompt iteration (weekend 3)
