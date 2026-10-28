@@ -138,9 +138,11 @@ Evals score the fixer from Milestone 1 onward. To make that possible, M1 ships a
 **Dataset.** Each case is a folder under `packages/evals/dataset/cases/<id>/`:
 
 - `case.json`, validated against `EvalCase`
-- `input/`, the React files
+- `input/`, the one React file the case is about (its `filePath`)
 - `expected/`, an optional reference fix
 - an optional `test.tsx`
+
+**Repo-mode cases** (M3, #25) don't carry their own repo. They run the agent against `fixtures/sample-site`, and `sourceFiles` names the sample-site file(s) the issue maps to. One shared, realistic repo is closer to what the agent will face than ten tiny ones, the sample site's seeded-issue manifest already says where each issue lives, and M3's "done when" is measured on that repo anyway. The cost is coupling: a change to the sample site can change what a repo-mode case measures, so such a change bumps `datasetVersion` and keeps `issues.manifest.json` in sync. If one repo proves too narrow, a second fixture repo can sit beside it.
 
 `manifest.json` holds a `datasetVersion` that is bumped on any change, and every result records both the dataset version and the case version. Git provides the history.
 
@@ -239,7 +241,7 @@ The plan is five milestones over six weekends. Each one ends with a review stop.
 | Agent loop with `run_scan`, `read_file`, `search_repo`, `propose_patch` and streamed steps | Casey   |
 | Issue-to-component mapping (search heuristics + model ranking)                             | Casey   |
 | Diff review UI: view, edit, approve, reject; keyboard and screen-reader friendly           | Casey   |
-| 10 multi-file repo-mode cases + a mapping-accuracy scorer                                  | Upasana |
+| 10 repo-mode cases against `fixtures/sample-site` + a mapping-accuracy scorer              | Upasana |
 | Tool integration tests: path traversal, symlinks, secrets, size limits                     | Upasana |
 
 - **Data model:** adds `repos` and `patches`.
@@ -318,7 +320,7 @@ None of these are in the six weekends. Each one has a seam in v1, so adding it l
 Open questions to settle during the build:
 
 - [ ] Is $20/month enough once the full eval tier runs weekly? M1 measures the real cost per case, and we'll decide by M2.
-- [ ] Where do repo-mode eval cases (M3, #25) keep their source? Either `input/` holds a small multi-file repo per case, or `input/` holds only the one file the agent sees and `sourceFiles` point into `fixtures/sample-site`. Settle before #25 starts and update the dataset section to match.
+- [x] Where do repo-mode eval cases (M3, #25) keep their source? Settled in #47: `input/` holds only the case's one file, and repo-mode cases point `sourceFiles` into `fixtures/sample-site` (see [Eval design](#eval-design)).
 - [ ] Which model for the fixer? We start with Sonnet 5.5 and let the M2 evals check whether Haiku 5.5 is good enough.
 
 ## Keeping this plan current

@@ -67,7 +67,8 @@ Workspace packages export TypeScript source directly. Next.js compiles them via
 - **Deliberately broken code is fixture data.** `fixtures/sample-site/src` and
   `packages/evals/dataset` are full of a11y bugs on purpose and are excluded from lint and
   formatting. Don't "fix" them unless the task is about the fixture, and keep the sample site's
-  `issues.manifest.json` in sync with any change there.
+  `issues.manifest.json` in sync with any change there. Repo-mode eval cases run against the
+  sample site, so a change there also bumps the dataset's `datasetVersion`.
 - **Our own UI is accessible.** New UI must pass axe with zero violations and work with only a
   keyboard. Prefer native elements to ARIA. `jsx-a11y` strict is on for `.tsx`.
 - **Prompt changes are judged by evals**, not by a demo. Log them in `docs/prompt-log.md` with
