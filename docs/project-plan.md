@@ -167,7 +167,7 @@ Evals score the fixer from Milestone 1 onward. To make that possible, M1 ships a
 - **(d) Judge.** Haiku 5.5 scores 1–5 against a written rubric: correct, minimal, idiomatic React, and native elements preferred over ARIA. Upasana hand-labels 15 cases to calibrate it, and we report how often the judge agrees with her.
 - **(e) Cost and latency.** Recorded per case, summed and given a p95 per run.
 
-A fix case passes when (a), (b), and (c) all pass and the judge gives 3 or more. A no-change case passes when the outcome is `no_change_needed` or `unsure` with no diff.
+A fix case passes when (a), (b), and (c) all pass and the judge gives 3 or more. A no-change case passes when the outcome is `no_change_needed` or `unsure` with no diff. An unsure case passes only when the outcome is `unsure`. A diff that doesn't apply to the input fails (a), (b), and (c), and counts as a build break.
 
 **Thresholds.** These are starting values, to be tuned after the first full run in M2.
 
