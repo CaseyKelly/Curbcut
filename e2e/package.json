@@ -1,0 +1,7 @@
+{
+  "name": "@a11y-fixer/e2e",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Playwright E2E and the accessibility gate for our own app (#29, #30)."
+}

@@ -1,0 +1,20 @@
+{
+  "name": "@a11y-fixer/worker",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Long-running worker on Fly.io: claims jobs, runs scans and agent runs (#5).",
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "start": "tsx src/index.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@a11y-fixer/agent": "*",
+    "@a11y-fixer/core": "*",
+    "@a11y-fixer/db": "*"
+  },
+  "devDependencies": {
+    "tsx": "^4.20.0"
+  }
+}

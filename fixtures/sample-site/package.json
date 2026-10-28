@@ -1,0 +1,7 @@
+{
+  "name": "@a11y-fixer/sample-site",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Small React app with deliberate accessibility bugs. Demo target and repo-mode test repo (#10)."
+}

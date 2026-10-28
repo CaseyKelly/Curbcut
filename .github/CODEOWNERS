@@ -1,0 +1,5 @@
+# Default: either of us can review.
+*                 @CaseyKelly @upasanaajbani
+
+# The app/evals contract. Both of us must approve changes here (#1, #2).
+/packages/core/   @CaseyKelly @upasanaajbani

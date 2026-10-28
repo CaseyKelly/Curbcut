@@ -1,0 +1,16 @@
+{
+  "name": "@a11y-fixer/agent",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "LLM provider, explanations, proposeFix and the agent loop (#6, #7, #9, #22).",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@a11y-fixer/core": "*"
+  }
+}

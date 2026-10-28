@@ -1,0 +1,9 @@
+package-lock.json
+.next/
+dist/
+coverage/
+playwright-report/
+test-results/
+
+# Exact bytes matter here: eval inputs and expected diffs.
+packages/evals/dataset/cases/

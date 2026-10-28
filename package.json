@@ -1,0 +1,41 @@
+{
+  "name": "a11y-fixer",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "AI agent that audits web pages for WCAG 2.1 AA issues, explains them, and proposes reviewed code fixes.",
+  "engines": {
+    "node": ">=22"
+  },
+  "workspaces": [
+    "apps/*",
+    "packages/*",
+    "fixtures/*",
+    "e2e"
+  ],
+  "scripts": {
+    "check": "npm run typecheck && npm run lint && npm run test",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "lint": "eslint . --max-warnings=0",
+    "lint:fix": "eslint . --fix",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "dev:web": "npm run dev -w @a11y-fixer/web",
+    "dev:worker": "npm run dev -w @a11y-fixer/worker"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.30.0",
+    "@types/node": "^22.15.0",
+    "eslint": "^9.30.0",
+    "eslint-config-prettier": "^10.1.0",
+    "eslint-plugin-jsx-a11y": "^6.10.2",
+    "eslint-plugin-react-hooks": "^5.2.0",
+    "globals": "^16.0.0",
+    "prettier": "^3.6.0",
+    "typescript": "^5.9.0",
+    "typescript-eslint": "^8.40.0",
+    "vitest": "^3.2.0"
+  }
+}

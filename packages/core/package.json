@@ -1,0 +1,16 @@
+{
+  "name": "@a11y-fixer/core",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Shared Zod schemas and types: the contract between the app, agent and evals (#2).",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "zod": "^4.1.0"
+  }
+}

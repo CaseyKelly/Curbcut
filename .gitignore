@@ -1,0 +1,30 @@
+node_modules/
+dist/
+coverage/
+*.tsbuildinfo
+
+# Next.js
+.next/
+out/
+next-env.d.ts
+
+# Playwright
+playwright-report/
+test-results/
+blob-report/
+
+# Eval run output
+packages/evals/reports/
+
+# Env and secrets
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# OS / editor
+.DS_Store
+.vscode/*
+!.vscode/extensions.json
+.idea/

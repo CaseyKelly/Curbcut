@@ -1,0 +1,16 @@
+{
+  "name": "@a11y-fixer/db",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Drizzle schema, migrations and queries (#3, #16).",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@a11y-fixer/core": "*"
+  }
+}
