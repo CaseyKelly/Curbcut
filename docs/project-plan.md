@@ -62,19 +62,19 @@ Curbcut/
 
 The contract is a set of Zod schemas in `packages/core`. Changing one needs both of your approvals (CODEOWNERS lists you both; GitHub only enforces one, so by convention whoever didn't write the change approves it).
 
-| Schema                                                                                             | Produced by          | Consumed by                                    |
-| -------------------------------------------------------------------------------------------------- | -------------------- | ---------------------------------------------- |
-| `A11yIssue`: a normalized axe violation (rule, impact, WCAG tags, selector, HTML, fingerprint)     | Scanner              | UI, agent, eval scorer (a)                     |
-| `IssueExplanation`: what's wrong, who it affects, why it matters, confidence                       | Explanation pipeline | UI, judge                                      |
-| `PatchProposal`: outcome, file, diff, explanation, confidence                                      | Agent                | Diff review UI, every eval scorer              |
-| `AgentStep`: a union of thinking, tool call, tool result, message, and error, with tokens and cost | Agent loop           | Streaming UI, cost tracking, eval latency/cost |
-| `EvalCase`: one dataset entry                                                                      | Upasana's dataset    | Eval runner                                    |
-| `EvalResult`: per-case scores (a) through (e) and pass/fail                                        | Eval runner          | CI comment, evals dashboard                    |
+| Schema                                                                                                                                                                                              | Produced by          | Consumed by                                    |
+| --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------- | ---------------------------------------------- |
+| `A11yIssue`: a normalized axe violation (rule, impact, WCAG tags, selector, HTML, fingerprint)                                                                                                      | Scanner              | UI, agent, eval scorer (a)                     |
+| `IssueExplanation`: what's wrong, who it affects, why it matters, confidence                                                                                                                        | Explanation pipeline | UI, judge                                      |
+| `PatchProposal`: outcome, file, diff, explanation, confidence                                                                                                                                       | Agent                | Diff review UI, every eval scorer              |
+| `AgentStep`: a union of `thought`, `tool_call`, `tool_result`, and `end` (with the run's end reason). Per-step tokens and cost are planned for the `agent_steps` table but aren't in the schema yet | Agent loop           | Streaming UI, cost tracking, eval latency/cost |
+| `EvalCase`: one dataset entry                                                                                                                                                                       | Upasana's dataset    | Eval runner                                    |
+| `EvalResult`: per-case scores (a) through (e) and pass/fail                                                                                                                                         | Eval runner          | CI comment, evals dashboard                    |
 
-The schemas themselves live in [`packages/core/src/index.ts`](../packages/core/src/index.ts), which is authoritative; this plan doesn't copy them so the two can't drift. Two points from the design that the code keeps:
+The schemas themselves live in [`packages/core/src/index.ts`](../packages/core/src/index.ts), which is authoritative; this plan doesn't copy them so the two can't drift. The objects are strict, so a field the plan mentions but the schema lacks is rejected until it's added there. Two points from the design:
 
 - `PatchProposal` is a union on `outcome`: `fix` (with `filePath` and a unified `diff`), `no_change_needed`, or `unsure` (with a `question` for the reviewer). `outcome` is how the model says "don't change anything" or "I'm not sure" instead of forcing a bad diff. The eval treats those as correct answers when the case expects them.
-- `EvalCase` has a `version` that is bumped when the case changes, and `framework` is the literal `'react'` until other frameworks arrive.
+- Planned, not yet in `EvalCase`: a per-case `version` bumped when the case changes (see [Eval design](#eval-design)), and a `framework` field once a second framework arrives. Add them to the schema before writing them into `case.json`.
 
 ## Data model
 
@@ -311,7 +311,7 @@ None of these are in the six weekends. Each one has a seam in v1, so adding it l
 | ------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------- |
 | Crawling                  | `scans.targets` is already an array, and fingerprints deduplicate issues across pages. A crawler only has to fill the list (same origin, with page and depth caps).        | 1 weekend                     |
 | Login with credentials    | `scans.auth_profile_id` is reserved. Credentials would be encrypted at rest and used only in the worker, never sent to the LLM. Playwright `storageState` replays a login. | 1–2 weekends, mostly security |
-| Vue, Svelte, Angular      | The `FrameworkAdapter` interface, plus the eval `framework` field (widen the literal to an enum). Each framework needs its own eval cases before it ships.                 | 1 weekend each                |
+| Vue, Svelte, Angular      | The `FrameworkAdapter` interface, plus a `framework` field on `EvalCase` (not there yet; React is implied today). Each framework needs its own eval cases before it ships. | 1 weekend each                |
 | Public access and billing | The allowlist becomes a `users` table. Per-user quotas reuse the cost tracking. Stripe goes in front. A GitHub Marketplace listing is another route.                       | 2+ weekends                   |
 | Builds on user repos      | Same sandbox as the eval fixtures, run in Fly Machines or a Vercel Sandbox per job.                                                                                        | 1–2 weekends                  |
 
