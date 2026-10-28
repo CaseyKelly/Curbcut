@@ -1,0 +1,13 @@
+# The last matching rule wins, so the catch-all goes first.
+* @CaseyKelly
+
+# Quality and evals
+/packages/evals/ @UpasanaAjbani
+/fixtures/ @UpasanaAjbani
+/e2e/ @UpasanaAjbani
+
+# The shared contract. Changes here affect both the app and the evals.
+# GitHub accepts approval from ANY listed owner, so this does not force two
+# approvals. Our convention: whichever of us didn't write the change
+# approves it, and the PR template checklist asks for it.
+/packages/core/ @CaseyKelly @UpasanaAjbani
