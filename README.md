@@ -15,6 +15,9 @@
 
 Point Curbcut at a URL. An AI agent scans the page against WCAG 2.1 AA, tells you in plain language what's wrong and who it affects, finds the component in your repo that causes it, and drafts a minimal fix. **Nothing changes until a human approves the diff.** Then it opens a pull request and re-scans the preview deploy to check the fix worked.
 
+> [!NOTE]
+> This README describes the design we're building toward. Most of it isn't implemented yet. See [Status](#status) for what works today.
+
 ## How it works
 
 ```mermaid
@@ -60,7 +63,7 @@ Prompt changes have to beat the eval suite, not just look good in a demo. Every 
 | **Quality**        | Is it correct, minimal, and idiomatic React, using native elements before ARIA? (LLM judge, calibrated against hand labels) |
 | **Cost & latency** | What did it cost, and how long did it take?                                                                                 |
 
-CI runs a free **replay** tier on every PR, a **smoke** tier when the agent or prompts change, and the **full** suite weekly. Every PR gets a comment with its score diff against `main`.
+**Planned CI tiers ([#17](https://github.com/CaseyKelly/a11y-fixer/issues/17), not running yet):** a free **replay** tier on every PR, a **smoke** tier when the agent or prompts change, and the **full** suite weekly. Every PR will get a comment with its score diff against `main`. Today, CI runs `npm run check` (format, lint, typecheck, and unit tests) on every push and PR.
 
 ## Getting started
 
