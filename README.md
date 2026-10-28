@@ -112,7 +112,7 @@ Prompt changes have to beat the eval suite, not just look good in a demo. Every 
 
 ## Getting started
 
-Requires Node 22 (`nvm use` reads `.nvmrc`).
+Requires Node 22.18 or later (`nvm use` reads `.nvmrc`).
 
 ```bash
 npm install

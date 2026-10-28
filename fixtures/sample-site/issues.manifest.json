@@ -5,6 +5,7 @@
     {
       "id": "document-no-lang",
       "ruleId": "html-has-lang",
+      "nodes": 1,
       "category": "document",
       "file": "index.html",
       "component": null,
@@ -14,6 +15,7 @@
     {
       "id": "document-no-title",
       "ruleId": "document-title",
+      "nodes": 1,
       "category": "document",
       "file": "index.html",
       "component": null,
@@ -23,6 +25,7 @@
     {
       "id": "document-zoom-disabled",
       "ruleId": "meta-viewport",
+      "nodes": 1,
       "category": "document",
       "file": "index.html",
       "component": null,
@@ -32,6 +35,7 @@
     {
       "id": "header-logo-link-name",
       "ruleId": "link-name",
+      "nodes": 1,
       "category": "names",
       "file": "src/components/Header.tsx",
       "component": "Header",
@@ -41,6 +45,7 @@
     {
       "id": "header-cart-button-name",
       "ruleId": "button-name",
+      "nodes": 1,
       "category": "names",
       "file": "src/components/Header.tsx",
       "component": "Header",
@@ -50,6 +55,7 @@
     {
       "id": "hero-image-alt",
       "ruleId": "image-alt",
+      "nodes": 1,
       "category": "images",
       "file": "src/components/Hero.tsx",
       "component": "Hero",
@@ -59,6 +65,7 @@
     {
       "id": "hero-tagline-contrast",
       "ruleId": "color-contrast",
+      "nodes": 1,
       "category": "contrast",
       "file": "src/styles.css",
       "component": "Hero",
@@ -69,6 +76,7 @@
     {
       "id": "product-rating-img-name",
       "ruleId": "role-img-alt",
+      "nodes": 3,
       "category": "images",
       "file": "src/components/ProductCard.tsx",
       "component": "ProductCard",
@@ -78,6 +86,7 @@
     {
       "id": "product-grid-list-children",
       "ruleId": "list",
+      "nodes": 1,
       "category": "structure",
       "file": "src/components/ProductGrid.tsx",
       "component": "ProductGrid",
@@ -88,6 +97,7 @@
     {
       "id": "newsletter-email-label",
       "ruleId": "label",
+      "nodes": 1,
       "category": "forms",
       "file": "src/components/Newsletter.tsx",
       "component": "Newsletter",
@@ -97,6 +107,7 @@
     {
       "id": "newsletter-nested-link",
       "ruleId": "nested-interactive",
+      "nodes": 1,
       "category": "focus",
       "file": "src/components/Newsletter.tsx",
       "component": "Newsletter",
@@ -106,6 +117,7 @@
     {
       "id": "checkout-name-autocomplete",
       "ruleId": "autocomplete-valid",
+      "nodes": 1,
       "category": "forms",
       "file": "src/components/CheckoutForm.tsx",
       "component": "CheckoutForm",
@@ -115,6 +127,7 @@
     {
       "id": "checkout-postcode-aria-typo",
       "ruleId": "aria-valid-attr",
+      "nodes": 1,
       "category": "aria",
       "file": "src/components/CheckoutForm.tsx",
       "component": "CheckoutForm",
@@ -124,6 +137,7 @@
     {
       "id": "checkout-country-select-name",
       "ruleId": "select-name",
+      "nodes": 1,
       "category": "forms",
       "file": "src/components/CheckoutForm.tsx",
       "component": "CheckoutForm",
@@ -133,6 +147,7 @@
     {
       "id": "faq-aria-controls-mismatch",
       "ruleId": "aria-valid-attr-value",
+      "nodes": 1,
       "category": "aria",
       "file": "src/components/Faq.tsx",
       "component": "Faq",
@@ -142,6 +157,7 @@
     {
       "id": "faq-hidden-panel-focusable",
       "ruleId": "aria-hidden-focus",
+      "nodes": 2,
       "category": "focus",
       "file": "src/components/Faq.tsx",
       "component": "Faq",
@@ -151,6 +167,7 @@
     {
       "id": "settings-switch-name",
       "ruleId": "aria-toggle-field-name",
+      "nodes": 1,
       "category": "names",
       "file": "src/components/SettingsPanel.tsx",
       "component": "SettingsPanel",
@@ -160,6 +177,7 @@
     {
       "id": "settings-slider-valuenow",
       "ruleId": "aria-required-attr",
+      "nodes": 1,
       "category": "aria",
       "file": "src/components/SettingsPanel.tsx",
       "component": "SettingsPanel",
@@ -169,6 +187,7 @@
     {
       "id": "settings-invalid-role",
       "ruleId": "aria-roles",
+      "nodes": 1,
       "category": "aria",
       "file": "src/components/SettingsPanel.tsx",
       "component": "SettingsPanel",
@@ -178,6 +197,7 @@
     {
       "id": "map-frame-title",
       "ruleId": "frame-title",
+      "nodes": 1,
       "category": "names",
       "file": "src/components/StoreMap.tsx",
       "component": "StoreMap",
@@ -187,6 +207,7 @@
     {
       "id": "footer-listitem-parent",
       "ruleId": "listitem",
+      "nodes": 3,
       "category": "structure",
       "file": "src/components/Footer.tsx",
       "component": "Footer",
@@ -196,6 +217,7 @@
     {
       "id": "footer-legal-contrast",
       "ruleId": "color-contrast",
+      "nodes": 1,
       "category": "contrast",
       "file": "src/styles.css",
       "component": "Footer",
