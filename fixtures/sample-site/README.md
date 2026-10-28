@@ -1,3 +1,9 @@
-# Sample site
+# Fernleaf
 
-A small React app with deliberate accessibility bugs. It is the demo target and the repo-mode test repo. Owned by Upasana (issue #10).
+A small plant shop built with Vite and React.
+
+```bash
+npm install
+npm run dev     # http://localhost:5173
+npm run build
+```

@@ -35,12 +35,24 @@ export const RelativePath = z
   );
 export type RelativePath = z.infer<typeof RelativePath>;
 
+/** A kebab-case id, e.g. "image-alt-decorative". Used for eval cases and manifest entries. */
+export const Slug = z.string().regex(/^[a-z0-9]+(-[a-z0-9]+)*$/, 'must be kebab-case');
+export type Slug = z.infer<typeof Slug>;
+
 /** An http or https URL. Other schemes (`javascript:`, `data:`) are rejected. */
 export const HttpUrl = z.url({ protocol: /^https?$/ });
 export type HttpUrl = z.infer<typeof HttpUrl>;
 
 // ---------------------------------------------------------------------------
 // Scanning
+
+/**
+ * The axe tags every scan runs with: WCAG 2.1 A and AA. The worker's scanner
+ * (#5) and the sample-site scan both use this, so evals and production check
+ * the same rules.
+ */
+export const AXE_WCAG_TAGS = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'] as const;
+export type AxeWcagTag = (typeof AXE_WCAG_TAGS)[number];
 
 /** One axe violation on one element, normalized by the scanner (#5). */
 export const A11yIssue = z.strictObject({
@@ -177,7 +189,7 @@ export type LineRange = z.infer<typeof LineRange>;
  * or `.pick()` a refined object, so derive shapes from this instead.
  */
 export const EvalCaseObject = z.strictObject({
-  id: z.string().regex(/^[a-z0-9]+(-[a-z0-9]+)*$/, 'must be kebab-case'),
+  id: Slug,
   description: z.string().min(1),
   category: z.string().min(1),
   /** e.g. `smoke` for the fast tier (#14). */
