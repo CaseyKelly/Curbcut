@@ -1,0 +1,11 @@
+# The last matching rule wins, so the catch-all goes first.
+* @CaseyKelly
+
+# Quality and evals
+/packages/evals/ @UpasanaAjbani
+/fixtures/ @UpasanaAjbani
+/e2e/ @UpasanaAjbani
+
+# The shared contract. Changes here affect both the app and the evals,
+# so both of us review them.
+/packages/core/ @CaseyKelly @UpasanaAjbani
