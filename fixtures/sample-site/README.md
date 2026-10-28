@@ -22,12 +22,12 @@ Only rules in axe's WCAG 2.1 A and AA tags are seeded, because that is what the 
 
 ## The scan
 
-`scripts/scan.ts` starts Vite, loads the page in Chromium, runs axe with the WCAG 2.1 AA tags, and matches every violation to a manifest entry by rule and selector. It fails when:
+`scripts/scan.ts` builds the site, serves the build with `vite preview`, loads the page in Chromium, runs axe with the WCAG 2.1 AA tags, and matches every violation to a manifest entry by rule and selector. It fails when:
 
 - a seeded issue is not found, or is flagged on more or fewer elements than its `nodes`
 - axe reports a violation that is not in the manifest
-- a correct pattern has a violation
-- a manifest selector matches nothing, or a violation matches more than one issue
+- a correct pattern has a violation or an incomplete result, or sits inside a container axe flags (such as a broken list)
+- a manifest selector is invalid or matches nothing, or a violation matches more than one issue
 - a manifest `file` or `relatedFiles` path doesn't exist, or two entries share an id
 
 CI runs it on every PR, so the site and the manifest can't drift apart.
@@ -36,4 +36,4 @@ CI runs it on every PR, so the site and the manifest can't drift apart.
 
 - **Don't comment the bugs in the source.** In repo mode the agent reads these files, and a `// missing alt` comment gives the answer away. The manifest is the only record.
 - Add or change a bug and its manifest entry in the same commit, then run the scan.
-- ESLint and Prettier skip this folder on purpose. TypeScript still checks it, so the bugs are accessibility bugs, not build errors.
+- ESLint and Prettier skip `src/` and `index.html` on purpose. TypeScript still checks them, so the bugs are accessibility bugs, not build errors. The scan script and config are linted and formatted like the rest of the repo.

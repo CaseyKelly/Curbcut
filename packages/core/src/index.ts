@@ -42,6 +42,14 @@ export type HttpUrl = z.infer<typeof HttpUrl>;
 // ---------------------------------------------------------------------------
 // Scanning
 
+/**
+ * The axe tags every scan runs with: WCAG 2.1 A and AA. The worker's scanner
+ * (#5) and the sample-site scan both use this, so evals and production check
+ * the same rules.
+ */
+export const AXE_WCAG_TAGS = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'] as const;
+export type AxeWcagTag = (typeof AXE_WCAG_TAGS)[number];
+
 /** One axe violation on one element, normalized by the scanner (#5). */
 export const A11yIssue = z.strictObject({
   ruleId: z.string().min(1),

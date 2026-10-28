@@ -9,13 +9,20 @@ import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import AxeBuilder from '@axe-core/playwright';
-import { RelativePath } from '@curbcut/core';
-import { chromium } from 'playwright';
-import { createServer } from 'vite';
+import { AXE_WCAG_TAGS, RelativePath } from '@curbcut/core';
+import { chromium, type Browser } from 'playwright';
+import { build, preview } from 'vite';
 import { z } from 'zod';
 
-// The tags the scanner in apps/worker uses (#5).
-const WCAG_TAGS = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'];
+// Rules axe reports on a container rather than on the elements inside it. A
+// correct pattern inside such a container is broken too.
+const CONTAINER_RULES = [
+  'aria-hidden-focus',
+  'aria-required-children',
+  'definition-list',
+  'list',
+  'nested-interactive',
+];
 
 const Entry = z.strictObject({
   id: z.string().regex(/^[a-z0-9]+(-[a-z0-9]+)*$/),
@@ -39,7 +46,9 @@ const Manifest = z
   .superRefine((m, ctx) => {
     const ids = [...m.issues, ...m.correctPatterns].map((e) => e.id);
     const dupes = [...new Set(ids.filter((id, i) => ids.indexOf(id) !== i))];
-    if (dupes.length > 0) ctx.addIssue({ code: 'custom', message: `Duplicate ids: ${dupes.join(', ')}` });
+    if (dupes.length > 0) {
+      ctx.addIssue({ code: 'custom', message: `Duplicate ids: ${dupes.join(', ')}` });
+    }
   });
 
 const root = fileURLToPath(new URL('..', import.meta.url));
@@ -48,58 +57,104 @@ const manifest = Manifest.parse(
 );
 const entries = [...manifest.issues, ...manifest.correctPatterns];
 const missingFiles = entries.flatMap((e) =>
-  [e.file, ...(e.relatedFiles ?? [])].filter((f) => !existsSync(join(root, f))).map((f) => `${e.id} (${f})`),
+  [e.file, ...(e.relatedFiles ?? [])]
+    .filter((f) => !existsSync(join(root, f)))
+    .map((f) => `${e.id} (${f})`),
 );
 
-// forwardConsole off: the seeded bugs make React log warnings in the browser.
-const server = await createServer({
-  root,
-  logLevel: 'error',
-  server: { port: 0, forwardConsole: false },
-});
-await server.listen();
-const baseUrl = server.resolvedUrls?.local[0];
-if (!baseUrl) throw new Error('Vite did not report a local URL');
+// A production build served statically, so no dependency discovery or HMR
+// reload can change the page while axe runs.
+await build({ root, logLevel: 'error' });
+const server = await preview({ root, logLevel: 'error', preview: { port: 0 } });
 
-const browser = await chromium.launch();
+let browser: Browser | undefined;
 let failed = false;
 try {
+  const baseUrl = server.resolvedUrls?.local[0];
+  if (!baseUrl) throw new Error('Vite did not report a local URL');
+
+  browser = await chromium.launch();
   const page = await (await browser.newContext()).newPage();
-  await page.goto(new URL(manifest.page, baseUrl).href, { waitUntil: 'networkidle' });
+  await page.goto(new URL(manifest.page, baseUrl).href);
   await page.locator('main').waitFor();
 
-  const results = await new AxeBuilder({ page }).withTags(WCAG_TAGS).analyze();
-  const nodes = results.violations.flatMap((v) =>
-    v.nodes.map((n) => ({ ruleId: v.id, target: n.target.map(String) })),
-  );
+  const results = await new AxeBuilder({ page }).withTags([...AXE_WCAG_TAGS]).analyze();
+  const toNodes = (list: typeof results.violations) =>
+    list.flatMap((r) => r.nodes.map((n) => ({ ruleId: r.id, target: n.target.map(String) })));
+  const nodes = toNodes(results.violations);
+  const incomplete = toNodes(results.incomplete);
 
   // Match in the page, where selectors resolve to the same elements axe saw.
-  const { matches, missingSelectors, flaggedPatterns } = await page.evaluate(
-    ({ issues, patterns, nodes }) => {
-      const all = (sel: string) => [...document.querySelectorAll(sel)];
+  const { matches, invalidSelectors, missingSelectors, flaggedPatterns } = await page.evaluate(
+    ({ issues, patterns, nodes, incomplete, containerRules }) => {
+      const invalidSelectors: string[] = [];
+      const byId = new Map<string, Element[]>();
+      for (const e of [...issues, ...patterns]) {
+        try {
+          byId.set(e.id, [...document.querySelectorAll(e.selector)]);
+        } catch {
+          invalidSelectors.push(`${e.id} (${e.selector})`);
+          byId.set(e.id, []);
+        }
+      }
+      const missingSelectors = [...issues, ...patterns]
+        .filter(
+          (e) =>
+            byId.get(e.id)!.length === 0 && !invalidSelectors.some((s) => s.startsWith(`${e.id} `)),
+        )
+        .map((e) => e.id);
+
       // Nodes inside iframes have a multi-part target; none are seeded.
-      const elements = nodes.map((n) =>
-        n.target.length === 1 ? document.querySelector(n.target[0]!) : null,
-      );
+      const resolve = (n: { target: string[] }) =>
+        n.target.length === 1 ? document.querySelector(n.target[0]!) : null;
+      const elements = nodes.map(resolve);
+
       // Every issue a node fits, so overlapping entries show up as ambiguous
       // instead of the first one silently taking the node.
       const matches = nodes.map((n, i) => {
         const el = elements[i];
         if (!el) return [];
-        return issues.filter((s) => s.ruleId === n.ruleId && all(s.selector).includes(el)).map((s) => s.id);
+        return issues
+          .filter((s) => s.ruleId === n.ruleId && byId.get(s.id)!.includes(el))
+          .map((s) => s.id);
       });
-      const missingSelectors = [...issues, ...patterns]
-        .filter((e) => all(e.selector).length === 0)
-        .map((e) => e.id);
-      const flaggedPatterns = patterns
-        .filter((p) => all(p.selector).some((pe) => elements.some((el) => el && pe.contains(el))))
-        .map((p) => p.id);
-      return { matches, missingSelectors, flaggedPatterns };
+
+      // A pattern is broken by a violation or an incomplete result on or
+      // inside it, or by a container rule reported on one of its ancestors.
+      // Seeded container issues don't count on ancestors: the product photos
+      // sit inside the seeded broken list by design.
+      const hits = [
+        ...nodes.map((n, i) => ({
+          n,
+          el: elements[i],
+          kind: 'violation',
+          seeded: matches[i]!.length > 0,
+        })),
+        ...incomplete.map((n) => ({ n, el: resolve(n), kind: 'incomplete', seeded: false })),
+      ];
+      const touches = (pe: Element, hit: (typeof hits)[number]) =>
+        !!hit.el &&
+        (pe.contains(hit.el) ||
+          (!hit.seeded && containerRules.includes(hit.n.ruleId) && hit.el.contains(pe)));
+      const flaggedPatterns = patterns.flatMap((p) => {
+        const patternHits = hits.filter((hit) => byId.get(p.id)!.some((pe) => touches(pe, hit)));
+        return patternHits.map(({ n, kind }) => `${p.id} (${n.ruleId}, ${kind})`);
+      });
+
+      return { matches, invalidSelectors, missingSelectors, flaggedPatterns };
     },
-    { issues: manifest.issues, patterns: manifest.correctPatterns, nodes },
+    {
+      issues: manifest.issues,
+      patterns: manifest.correctPatterns,
+      nodes,
+      incomplete,
+      containerRules: CONTAINER_RULES,
+    },
   );
 
-  console.log(`Scanned ${baseUrl} with axe ${results.testEngine.version} (${WCAG_TAGS.join(', ')})\n`);
+  console.log(
+    `Scanned ${baseUrl} with axe ${results.testEngine.version} (${AXE_WCAG_TAGS.join(', ')})\n`,
+  );
   for (const issue of manifest.issues) {
     const count = matches.filter((m) => m.length === 1 && m[0] === issue.id).length;
     const status = count === issue.nodes ? 'found ' : count === 0 ? 'MISSED' : 'COUNT ';
@@ -108,30 +163,30 @@ try {
     if (count !== issue.nodes) failed = true;
   }
 
-  const unexpected = nodes.filter((_, i) => matches[i]!.length === 0);
-  if (unexpected.length > 0) {
+  const report = (heading: string, lines: string[]) => {
+    if (lines.length === 0) return;
     failed = true;
-    console.log('\nUnexpected violations (fix the site or add them to the manifest):');
-    for (const n of unexpected) console.log(`  ${n.ruleId.padEnd(24)} ${n.target.join(' >> ')}`);
-  }
-  const ambiguous = nodes.flatMap((n, i) => (matches[i]!.length > 1 ? [{ ...n, ids: matches[i]! }] : []));
-  if (ambiguous.length > 0) {
-    failed = true;
-    console.log('\nViolations that fit more than one issue (narrow the selectors):');
-    for (const n of ambiguous) console.log(`  ${n.ruleId.padEnd(24)} ${n.target.join(' >> ')}: ${n.ids.join(', ')}`);
-  }
-  if (missingFiles.length > 0) {
-    failed = true;
-    console.log(`\nFiles that don't exist: ${missingFiles.join(', ')}`);
-  }
-  if (missingSelectors.length > 0) {
-    failed = true;
-    console.log(`\nSelectors that match nothing: ${missingSelectors.join(', ')}`);
-  }
-  if (flaggedPatterns.length > 0) {
-    failed = true;
-    console.log(`\nCorrect patterns with violations: ${flaggedPatterns.join(', ')}`);
-  }
+    console.log(`\n${heading}`);
+    for (const line of lines) console.log(`  ${line}`);
+  };
+  report(
+    'Unexpected violations (fix the site or add them to the manifest):',
+    nodes
+      .filter((_, i) => matches[i]!.length === 0)
+      .map((n) => `${n.ruleId.padEnd(24)} ${n.target.join(' >> ')}`),
+  );
+  report(
+    'Violations that fit more than one issue (narrow the selectors):',
+    nodes.flatMap((n, i) =>
+      matches[i]!.length > 1
+        ? [`${n.ruleId.padEnd(24)} ${n.target.join(' >> ')}: ${matches[i]!.join(', ')}`]
+        : [],
+    ),
+  );
+  report("Files that don't exist:", missingFiles);
+  report('Invalid selectors:', invalidSelectors);
+  report('Selectors that match nothing:', missingSelectors);
+  report('Correct patterns with violations or incomplete results:', flaggedPatterns);
 
   console.log(
     failed
@@ -139,7 +194,7 @@ try {
       : `\nAll ${manifest.issues.length} seeded issues found, ${manifest.correctPatterns.length} correct patterns clean, nothing unexpected.`,
   );
 } finally {
-  await browser.close();
+  await browser?.close();
   await server.close();
 }
 process.exit(failed ? 1 : 0);

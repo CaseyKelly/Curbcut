@@ -15,8 +15,10 @@ export default tseslint.config(
       '**/next-env.d.ts',
       // Eval cases contain deliberately broken code.
       'packages/evals/dataset/',
-      // The sample site is full of a11y bugs on purpose.
-      'fixtures/sample-site/',
+      // The sample site's pages are full of a11y bugs on purpose. Its scan
+      // script and config are linted like everything else.
+      'fixtures/sample-site/src/',
+      'fixtures/sample-site/index.html',
     ],
   },
   js.configs.recommended,
