@@ -3,6 +3,7 @@ import {
   A11yIssue,
   AgentStep,
   EvalCase,
+  EvalCaseObject,
   EvalResult,
   IssueExplanation,
   PatchProposal,
@@ -26,12 +27,27 @@ describe('RelativePath', () => {
     expect(RelativePath.safeParse(p).success).toBe(true);
   });
 
-  it.each(['', '/etc/passwd', 'C:\\x.ts', '../secret', 'src/../../x', 'a\\..\\b'])(
-    'rejects %s',
-    (p) => {
-      expect(RelativePath.safeParse(p).success).toBe(false);
-    },
-  );
+  it.each([
+    '',
+    '/etc/passwd',
+    'C:\\x.ts',
+    '../secret',
+    'src/../../x',
+    'a\\..\\b',
+    // Windows forms that resolve outside the root.
+    '\\Windows\\win.ini',
+    '\\\\server\\share\\x',
+    'C:secret.txt',
+    'C:..\\secret.txt',
+    // Directories, not files.
+    '.',
+    './',
+    'src/',
+    './src/App.tsx',
+    'src//App.tsx',
+  ])('rejects %s', (p) => {
+    expect(RelativePath.safeParse(p).success).toBe(false);
+  });
 });
 
 describe('A11yIssue', () => {
@@ -49,6 +65,15 @@ describe('A11yIssue', () => {
 
   it('rejects a missing fingerprint', () => {
     expect(A11yIssue.safeParse({ ...issue, fingerprint: undefined }).success).toBe(false);
+  });
+
+  it('rejects non-http URLs', () => {
+    expect(A11yIssue.safeParse({ ...issue, helpUrl: 'javascript:alert(1)' }).success).toBe(false);
+    expect(A11yIssue.safeParse({ ...issue, pageUrl: 'data:text/html,x' }).success).toBe(false);
+  });
+
+  it('rejects unknown keys', () => {
+    expect(A11yIssue.safeParse({ ...issue, severity: 'high' }).success).toBe(false);
   });
 });
 
@@ -129,6 +154,22 @@ describe('PatchProposal', () => {
   it('rejects an unknown outcome', () => {
     expect(PatchProposal.safeParse({ ...fix, outcome: 'maybe' }).success).toBe(false);
   });
+
+  it('rejects no_change_needed that also carries a diff', () => {
+    const result = PatchProposal.safeParse({ ...fix, outcome: 'no_change_needed' });
+    expect(result.success).toBe(false);
+  });
+
+  it('rejects unsure that also carries a filePath', () => {
+    const result = PatchProposal.safeParse({
+      outcome: 'unsure',
+      question: 'Decorative?',
+      filePath: 'src/Hero.tsx',
+      explanation: 'Depends on the image.',
+      confidence: 0.3,
+    });
+    expect(result.success).toBe(false);
+  });
 });
 
 describe('AgentStep', () => {
@@ -171,6 +212,21 @@ describe('AgentStep', () => {
 
   it('rejects an unknown end reason', () => {
     expect(AgentStep.safeParse({ ...base, type: 'end', reason: 'bored' }).success).toBe(false);
+  });
+
+  it('accepts a Postgres timestamptz with an offset', () => {
+    const step = {
+      ...base,
+      type: 'thought',
+      text: '',
+      createdAt: '2026-10-27T12:00:00.123456+00:00',
+    };
+    expect(AgentStep.safeParse(step).success).toBe(true);
+  });
+
+  it('rejects a key from another step type', () => {
+    const step = { ...base, type: 'thought', text: '', tool: 'read_file' };
+    expect(AgentStep.safeParse(step).success).toBe(false);
   });
 });
 
@@ -223,6 +279,21 @@ describe('EvalCase', () => {
     const result = EvalCase.safeParse({ ...evalCase, issue: { ...issue, helpUrl: 'nope' } });
     expect(result.success).toBe(false);
   });
+
+  it('rejects a fix case without allowedLines', () => {
+    expect(EvalCase.safeParse({ ...evalCase, allowedLines: undefined }).success).toBe(false);
+    expect(EvalCase.safeParse({ ...evalCase, allowedLines: [] }).success).toBe(false);
+  });
+
+  it('rejects a misspelled key', () => {
+    expect(EvalCase.safeParse({ ...evalCase, tag: ['smoke'] }).success).toBe(false);
+  });
+
+  it('exposes an omittable object shape', () => {
+    const withoutIssue = EvalCaseObject.omit({ issue: true });
+    const input = Object.fromEntries(Object.entries(evalCase).filter(([k]) => k !== 'issue'));
+    expect(withoutIssue.safeParse(input).success).toBe(true);
+  });
 });
 
 describe('EvalResult', () => {
@@ -251,9 +322,30 @@ describe('EvalResult', () => {
     expect(EvalResult.safeParse(result).success).toBe(true);
   });
 
-  it('accepts a crashed result with no scores', () => {
-    const crashed = { ...result, outcomeCorrect: false, scores: {}, error: 'Timed out' };
+  const crashed = {
+    caseId: 'image-alt-decorative',
+    outcome: 'error',
+    error: 'Timed out',
+    costUsd: 0.001,
+    latencyMs: 60000,
+    model: 'fix-model',
+    promptVersion: 'p1',
+  };
+
+  it('accepts a crash with no proposal outcome or scores', () => {
     expect(EvalResult.safeParse(crashed).success).toBe(true);
+  });
+
+  it('rejects a crash without an error message', () => {
+    expect(EvalResult.safeParse({ ...crashed, error: undefined }).success).toBe(false);
+  });
+
+  it('rejects scores on a crash', () => {
+    expect(EvalResult.safeParse({ ...crashed, scores: {} }).success).toBe(false);
+  });
+
+  it('rejects an error message on a scored result', () => {
+    expect(EvalResult.safeParse({ ...result, error: 'Timed out' }).success).toBe(false);
   });
 
   it('rejects a judge score outside 1 to 5', () => {
