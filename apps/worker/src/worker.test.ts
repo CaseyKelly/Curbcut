@@ -11,7 +11,23 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { UnsafeUrlError } from './errors';
 import { scanJob } from './jobs/scan';
 import { createQueue, LostJobError, type Job, type Queue } from './queue';
-import { createWorker } from './worker';
+import { createWorker, describeError } from './worker';
+
+describe('describeError', () => {
+  it('stores the database error, not the wrapping query with every parameter', () => {
+    const cause = new Error('duplicate key value violates unique constraint "issues_pk"');
+    const wrapped = new Error(`Failed query: insert into "issues" ${'x'.repeat(40_000)}`, {
+      cause,
+    });
+    expect(describeError(wrapped)).toBe(cause.message);
+  });
+
+  it('caps the length', () => {
+    const message = describeError(new Error('y'.repeat(10_000)));
+    expect(message).toHaveLength(500);
+    expect(message.endsWith('…')).toBe(true);
+  });
+});
 
 describe.skipIf(!process.env.DATABASE_URL)('worker', () => {
   let db: Db;
@@ -160,11 +176,11 @@ describe.skipIf(!process.env.DATABASE_URL)('worker', () => {
       fingerprint,
     });
 
-    async function newScanJob() {
+    async function newScanJob(targets = ['https://example.com/']) {
       const [scan] = await db
         .insert(scans)
         .values({
-          targets: ['https://example.com/'],
+          targets,
           createdByGithubId: 1,
           createdByLogin: 'test',
         })
@@ -175,18 +191,36 @@ describe.skipIf(!process.env.DATABASE_URL)('worker', () => {
     }
 
     /** One tick runs the test's job, the oldest due. */
-    async function runOnce(worker: ReturnType<typeof createWorker>, jobId: string) {
-      expect(await worker.tick()).toBe(true);
+    async function runOnce(
+      worker: ReturnType<typeof createWorker>,
+      jobId: string,
+      shutdown?: AbortSignal,
+    ) {
+      expect(await worker.tick(shutdown)).toBe(true);
       return reload(jobId);
     }
 
-    const workerWith = (scan: () => Promise<{ issues: A11yIssue[]; axeVersion: string }>) =>
+    const scanOf = async (scanId: string) =>
+      (await db.select().from(scans).where(eq(scans.id, scanId)))[0]!;
+
+    type FakeScan = (
+      url: string,
+      signal?: AbortSignal,
+    ) => Promise<{ issues: A11yIssue[]; axeVersion: string }>;
+
+    // A day by default, so these tests never requeue another test's running jobs.
+    const workerWith = (scan: FakeScan, lockTimeoutMs = 86_400_000) =>
       createWorker({
         queue,
         handlers: { scan: scanJob(db, { scan }) },
-        // Long enough that this test never requeues another test's running jobs.
-        lockTimeoutMs: 86_400_000,
+        lockTimeoutMs,
         log: () => undefined,
+      });
+
+    /** A scan that only ends when its signal aborts. */
+    const untilAborted: FakeScan = (_url, signal) =>
+      new Promise((_, reject) => {
+        signal!.addEventListener('abort', () => reject(new Error('aborted')), { once: true });
       });
 
     it('stores the issues and completes the scan', async () => {
@@ -221,21 +255,81 @@ describe.skipIf(!process.env.DATABASE_URL)('worker', () => {
       expect(scan).toMatchObject({ status: 'failed', error: 'private address' });
     });
 
-    it('retries a transient failure, leaving the scan running', async () => {
+    it('retries a transient failure, putting the scan back in the queue with the error', async () => {
       const { scanId, jobId } = await newScanJob();
       const worker = workerWith(() => Promise.reject(new Error('net::ERR_CONNECTION_RESET')));
       expect(await runOnce(worker, jobId)).toMatchObject({
         status: 'queued',
         attempts: 1,
       });
-      const [scan] = await db.select().from(scans).where(eq(scans.id, scanId));
-      expect(scan!.status).toBe('running');
+      expect(await scanOf(scanId)).toMatchObject({
+        status: 'queued',
+        error: 'net::ERR_CONNECTION_RESET',
+        finishedAt: null,
+      });
+    });
+
+    it('scans a repeated target once', async () => {
+      const { scanId, jobId } = await newScanJob(['https://example.com/', 'https://example.com/']);
+      const scanned: string[] = [];
+      const worker = workerWith((url) => {
+        scanned.push(url);
+        return Promise.resolve({ issues: [issue('image-alt', 'fp-1')], axeVersion: '4.11.0' });
+      });
+      expect(await runOnce(worker, jobId)).toMatchObject({ status: 'succeeded' });
+      expect(scanned).toEqual(['https://example.com/']);
+      expect(await db.select().from(issues).where(eq(issues.scanId, scanId))).toHaveLength(1);
+    });
+
+    it('on shutdown, aborts the scan and releases the job without spending an attempt', async () => {
+      const { scanId, jobId } = await newScanJob();
+      const shutdown = new AbortController();
+      const worker = workerWith((url, signal) => {
+        setTimeout(() => shutdown.abort(), 50);
+        return untilAborted(url, signal);
+      });
+      expect(await runOnce(worker, jobId, shutdown.signal)).toMatchObject({
+        status: 'queued',
+        attempts: 0,
+        lockedBy: null,
+      });
+      expect((await scanOf(scanId)).status).toBe('queued');
+    });
+
+    it('aborts the scan when another worker has taken the job, and leaves it to them', async () => {
+      const { jobId } = await newScanJob();
+      const worker = workerWith(async (url, signal) => {
+        await db.update(jobs).set({ lockedBy: 'someone-else' }).where(eq(jobs.id, jobId));
+        return untilAborted(url, signal);
+      }, 400);
+      expect(await runOnce(worker, jobId)).toMatchObject({
+        status: 'running',
+        attempts: 1,
+        lockedBy: 'someone-else',
+      });
+    });
+
+    it('fails the scan with the job when a stale job runs out of attempts', async () => {
+      const { scanId, jobId } = await newScanJob();
+      const handler = scanJob(db, { scan: () => Promise.reject(new Error('unused')) });
+      await db
+        .update(jobs)
+        .set({ status: 'running', attempts: 3, lockedAt: sql`now() - interval '10 minutes'` })
+        .where(eq(jobs.id, jobId));
+      await queue.requeueStale(60_000, (tx, job) => handler.onAttemptEnded!(tx, job));
+      expect((await reload(jobId)).status).toBe('failed');
+      expect(await scanOf(scanId)).toMatchObject({
+        status: 'failed',
+        error: 'Worker stopped responding (lock expired)',
+      });
     });
 
     it('fails a job with a bad payload without retrying', async () => {
       const { id } = await newJob({ payload: { scanId: 'not-a-uuid' } });
       const worker = workerWith(() => Promise.reject(new Error('should not scan')));
-      expect(await runOnce(worker, id)).toMatchObject({ status: 'failed', attempts: 1 });
+      const job = await runOnce(worker, id);
+      expect(job).toMatchObject({ status: 'failed', attempts: 1 });
+      expect(job.error).toMatch(/^Invalid scan job payload/);
     });
   });
 });

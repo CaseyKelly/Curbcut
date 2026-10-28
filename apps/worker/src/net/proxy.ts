@@ -10,6 +10,9 @@ import { UnsafeUrlError } from '../errors';
 /** Set on the proxy's own 403, so the scanner can tell a blocked page from a real one. */
 export const BLOCKED_HEADER = 'x-curbcut-blocked';
 
+/** How long an origin gets to accept a connection; the page timeout covers the rest. */
+const CONNECT_TIMEOUT_MS = 15_000;
+
 export interface GuardProxy {
   /** For Playwright's `proxy.server`. */
   url: string;
@@ -51,6 +54,8 @@ export async function startGuardProxy(options: GuardOptions = {}): Promise<Guard
     }
     resolvePublic(target.hostname, options).then(
       ({ address }) => {
+        // The browser may have given up while the name was resolving.
+        if (res.destroyed) return;
         const upstream = request(
           {
             host: address,
@@ -66,7 +71,14 @@ export async function startGuardProxy(options: GuardOptions = {}): Promise<Guard
             upstreamRes.pipe(res);
           },
         );
+        upstream.on('socket', (s) => {
+          track(s);
+          s.setTimeout(CONNECT_TIMEOUT_MS, () => upstream.destroy());
+          s.once('connect', () => s.setTimeout(0));
+        });
         upstream.on('error', () => res.destroy());
+        // An origin that never answers mustn't outlive the browser's request.
+        res.on('close', () => upstream.destroy());
         req.pipe(upstream);
       },
       (err: unknown) => {
@@ -89,13 +101,26 @@ export async function startGuardProxy(options: GuardOptions = {}): Promise<Guard
     socket.on('error', () => socket.destroy());
     resolvePublic(target.hostname, options).then(
       ({ address }) => {
-        const upstream = connect(Number(target.port || 443), address, () => {
+        if (socket.destroyed) return;
+        let established = false;
+        const upstream = connect({
+          host: address,
+          port: Number(target.port || 443),
+          timeout: CONNECT_TIMEOUT_MS,
+        });
+        track(upstream);
+        upstream.on('timeout', () => upstream.destroy(new Error('connect timed out')));
+        upstream.once('connect', () => {
+          established = true;
+          upstream.setTimeout(0);
           socket.write('HTTP/1.1 200 Connection Established\r\n\r\n');
           upstream.write(head);
           upstream.pipe(socket).pipe(upstream);
         });
-        track(upstream);
-        upstream.on('error', () => socket.end('HTTP/1.1 502 Bad Gateway\r\n\r\n'));
+        // Once the tunnel is up it carries TLS, so an error can only close it.
+        upstream.on('error', () =>
+          established ? socket.destroy() : socket.end('HTTP/1.1 502 Bad Gateway\r\n\r\n'),
+        );
         socket.on('close', () => upstream.destroy());
       },
       (err: unknown) => {

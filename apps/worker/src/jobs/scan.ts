@@ -7,26 +7,37 @@ import type { Job } from '../queue';
 import type { Scanner } from '../scanner/scanner';
 import type { JobHandler } from './types';
 
+function scanIdOf(job: Job): string {
+  const payload = ScanJobPayload.safeParse(job.payload);
+  if (!payload.success) {
+    throw new PermanentError(`Invalid scan job payload: ${payload.error.message}`);
+  }
+  return payload.data.scanId;
+}
+
 export function scanJob(db: Db, scanner: Pick<Scanner, 'scan'>): JobHandler {
   return {
-    async run(job: Job) {
-      const { scanId } = ScanJobPayload.parse(job.payload);
+    async run(job, { signal, write }) {
+      const scanId = scanIdOf(job);
       const [scan] = await db.select().from(scans).where(eq(scans.id, scanId));
       if (!scan) throw new PermanentError(`Scan ${scanId} not found`);
 
-      await db
-        .update(scans)
-        .set({
-          status: 'running',
-          error: null,
-          startedAt: sql`coalesce(${scans.startedAt}, now())`,
-        })
-        .where(eq(scans.id, scanId));
+      await write(async (tx) => {
+        await tx
+          .update(scans)
+          .set({
+            status: 'running',
+            error: null,
+            startedAt: sql`coalesce(${scans.startedAt}, now())`,
+          })
+          .where(eq(scans.id, scanId));
+      });
 
       const found: A11yIssue[] = [];
       let axeVersion: string | undefined;
-      for (const target of scan.targets) {
-        const result = await scanner.scan(target);
+      // A repeated target would store the same (page, fingerprint) twice.
+      for (const target of new Set(scan.targets)) {
+        const result = await scanner.scan(target, signal);
         found.push(...result.issues);
         axeVersion = result.axeVersion;
       }
@@ -51,12 +62,18 @@ export function scanJob(db: Db, scanner: Pick<Scanner, 'scan'>): JobHandler {
       };
     },
 
-    async onFailed(job: Job, error: string) {
+    async onAttemptEnded(tx, job) {
       const payload = ScanJobPayload.safeParse(job.payload);
       if (!payload.success) return;
-      await db
+      // Requeued: back to `queued`, with the last error so the UI can say why it's retrying.
+      const failed = job.status === 'failed';
+      await tx
         .update(scans)
-        .set({ status: 'failed', error, finishedAt: sql`now()` })
+        .set({
+          status: failed ? 'failed' : 'queued',
+          error: job.error,
+          finishedAt: failed ? sql`now()` : null,
+        })
         .where(eq(scans.id, payload.data.scanId));
     },
   };

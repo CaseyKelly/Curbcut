@@ -23,11 +23,12 @@ const worker = createWorker({
 });
 const health = await startHealthServer(Number(process.env.PORT ?? 8080), worker.healthy);
 
-// Fly sends SIGINT then waits `kill_timeout` before killing; finish the job in hand.
+// Fly sends SIGINT then waits `kill_timeout` before killing. Abort the job in
+// hand and put it back in the queue, so another machine picks it up at once.
 const stop = new AbortController();
 for (const signal of ['SIGINT', 'SIGTERM'] as const) {
   process.once(signal, () => {
-    console.log(`${signal}: finishing the current job, then stopping`);
+    console.log(`${signal}: releasing the current job, then stopping`);
     stop.abort();
   });
 }

@@ -36,9 +36,28 @@ describe('fingerprint', () => {
     expect(a).toBe(b);
   });
 
-  it('ignores React useId values', () => {
+  it('ignores React useId values in id selectors and id attributes', () => {
     expect(fingerprint('label', '#\\:r1\\:', '<input id=":r1:">')).toBe(
-      fingerprint('label', '#\\:r1\\:', '<input id=":r7:">'),
+      fingerprint('label', '#\\:r7\\:', '<input id=":r7:">'),
+    );
+    expect(
+      fingerprint(
+        'aria-valid-attr-value',
+        '[aria-labelledby="_r_2_"]',
+        '<div aria-labelledby="_r_2_ title">',
+      ),
+    ).toBe(
+      fingerprint(
+        'aria-valid-attr-value',
+        '[aria-labelledby="_r_9_"]',
+        '<div aria-labelledby="_r_9_ title">',
+      ),
+    );
+  });
+
+  it('keeps class names that only look like useId values', () => {
+    expect(fingerprint('button-name', '.btn_r_2_', '<button class="btn_r_2_">')).not.toBe(
+      fingerprint('button-name', '.btn_r_3_', '<button class="btn_r_3_">'),
     );
   });
 
@@ -88,6 +107,20 @@ describe('toA11yIssues', () => {
       html: '<button class="close"></button>',
     });
     expect(issue!.fingerprint).toMatch(/^[0-9a-f]{64}$/);
+  });
+
+  it('skips a node that does not fit A11yIssue, keeping the rest', () => {
+    const skipped: string[] = [];
+    const issues = toA11yIssues(
+      results([
+        { target: [], html: '<button></button>' },
+        { target: ['.close'], html: '<button class="close"></button>' },
+      ]),
+      'https://example.com/',
+      (ruleId) => skipped.push(ruleId),
+    );
+    expect(issues.map((i) => i.selector)).toEqual(['.close']);
+    expect(skipped).toEqual(['button-name']);
   });
 
   it('keeps fingerprints unique within a page when elements look the same', () => {

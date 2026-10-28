@@ -22,21 +22,28 @@ export function wcagCriteria(tags: string[]): string[] {
   return [...new Set(criteria)];
 }
 
+/** React `useId` values (`:r1:`, `«r1»`, `_r_1_`), which change with render order. */
+const USE_ID = /\\?:r[0-9a-z]+\\?:|«r[0-9a-z]+»|_r_[0-9a-z]+_/g;
+
 /**
  * Drops what changes between scans of the same element: positional
- * pseudo-classes, which shift when a sibling is added, and whitespace.
+ * pseudo-classes, which shift when a sibling is added, `useId` values in id
+ * selectors and id-like attribute selectors, and whitespace. Class names are
+ * left alone, even ones that happen to look like a `useId` value.
  */
 export function normalizeSelector(selector: string): string {
   return selector
     .replace(/:nth-(?:last-)?(?:child|of-type)\([^)]*\)/g, '')
+    .replace(/#(?:\\.|[\w-])+/g, (id) => id.replace(USE_ID, ''))
+    .replace(/\[(?:id|for|aria-[\w-]+)[~|^$*]?=[^\]]*\]/g, (attr) => attr.replace(USE_ID, ''))
     .replace(/\s+/g, ' ')
     .trim();
 }
 
-/** Drops whitespace differences and React `useId` values, which change with render order. */
+/** Drops whitespace differences and `useId` values in the attributes that hold ids. */
 export function normalizeHtml(html: string): string {
   return html
-    .replace(/:r[0-9a-z]+:|«r[0-9a-z]+»|_r_[0-9a-z]+_/g, '')
+    .replace(/\s(?:id|for|aria-[\w-]+)=(?:"[^"]*"|'[^']*')/g, (attr) => attr.replace(USE_ID, ''))
     .replace(/\s+/g, ' ')
     .trim();
 }
@@ -52,17 +59,23 @@ export function fingerprint(ruleId: string, selector: string, html: string): str
  * One `A11yIssue` per element axe flagged on `pageUrl`. Two identical elements
  * (say, three unlabeled icon buttons in a list) normalize to the same
  * fingerprint; later ones get `:2`, `:3` in document order, so fingerprints
- * stay unique within a page and still match across scans.
+ * stay unique within a page and still match across scans. A node that doesn't
+ * fit the contract is skipped and reported to `onInvalid`, rather than failing
+ * the whole page.
  */
-export function toA11yIssues(results: AxeResults, pageUrl: string): A11yIssue[] {
+export function toA11yIssues(
+  results: AxeResults,
+  pageUrl: string,
+  onInvalid?: (ruleId: string, reason: string) => void,
+): A11yIssue[] {
   const seen = new Map<string, number>();
   return results.violations.flatMap((rule) =>
-    rule.nodes.map((node) => {
+    rule.nodes.flatMap((node) => {
       const selector = formatTarget(node.target);
       const base = fingerprint(rule.id, selector, node.html);
       const n = (seen.get(base) ?? 0) + 1;
       seen.set(base, n);
-      return A11yIssue.parse({
+      const issue = A11yIssue.safeParse({
         ruleId: rule.id,
         // A violation always has an impact; the rule's is the highest of its nodes'.
         impact: node.impact ?? rule.impact ?? 'minor',
@@ -75,6 +88,9 @@ export function toA11yIssues(results: AxeResults, pageUrl: string): A11yIssue[] 
         failureSummary: node.failureSummary || undefined,
         fingerprint: n === 1 ? base : `${base}:${n}`,
       });
+      if (issue.success) return [issue.data];
+      onInvalid?.(rule.id, issue.error.message);
+      return [];
     }),
   );
 }

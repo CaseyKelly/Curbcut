@@ -6,6 +6,7 @@ import { createServer, type Server } from 'node:http';
 import type { AddressInfo } from 'node:net';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { PermanentError, UnsafeUrlError } from '../errors';
+import type { GuardOptions } from '../net/guard';
 import { Scanner } from './scanner';
 
 const page = (body: string) =>
@@ -30,6 +31,14 @@ beforeAll(async () => {
         return res.writeHead(302, { location: `http://private.test:${port}/secret` }).end();
       case '/to-private-https':
         return res.writeHead(302, { location: `https://private.test:${port}/secret` }).end();
+      case '/hang':
+        // Never answers, so a page that loads it never fires `load`.
+        return;
+      case '/slow-with-private-image':
+        return send(
+          200,
+          page(`<img alt="" src="http://private.test:${port}/secret"><img alt="" src="/hang">`),
+        );
       case '/embeds-private':
         return send(200, page(`<img alt="" src="http://private.test:${port}/secret">`));
       default:
@@ -39,17 +48,20 @@ beforeAll(async () => {
   // All interfaces, so a request the guard failed to stop would reach 127.0.0.2 and show up.
   await new Promise<void>((resolve) => server.listen(0, '0.0.0.0', resolve));
   port = (server.address() as AddressInfo).port;
-  scanner = new Scanner({
-    resolve: (hostname) =>
-      Promise.resolve([
-        { address: hostname === 'private.test' ? '127.0.0.2' : '127.0.0.1', family: 4 },
-      ]),
-    isBlockedAddress: (address) => address === '127.0.0.2',
-  });
+  scanner = new Scanner(guard);
 });
+
+const guard: GuardOptions = {
+  resolve: (hostname) =>
+    Promise.resolve([
+      { address: hostname === 'private.test' ? '127.0.0.2' : '127.0.0.1', family: 4 },
+    ]),
+  isBlockedAddress: (address) => address === '127.0.0.2',
+};
 
 afterAll(async () => {
   await scanner?.close();
+  server?.closeAllConnections();
   await new Promise((resolve) => server?.close(resolve));
 });
 
@@ -78,6 +90,25 @@ describe('Scanner', { timeout: 60_000 }, () => {
   it('blocks subresources on private addresses', async () => {
     await scanner.scan(url('/embeds-private'));
     expect(requested).not.toContain('/secret');
+  });
+
+  it('treats a timeout as retryable even if a subresource was blocked', async () => {
+    const quick = new Scanner({ ...guard, timeoutMs: 2_000 });
+    const err: unknown = await quick.scan(url('/slow-with-private-image')).catch((e: unknown) => e);
+    await quick.close();
+    expect(err).toBeInstanceOf(Error);
+    expect(err).not.toBeInstanceOf(PermanentError);
+    expect(String(err)).toMatch(/Timeout/);
+  });
+
+  it('stops when its signal aborts', async () => {
+    const stop = new AbortController();
+    setTimeout(() => stop.abort(new Error('shutting down')), 300);
+    const started = Date.now();
+    await expect(scanner.scan(url('/slow-with-private-image'), stop.signal)).rejects.toThrow(
+      'shutting down',
+    );
+    expect(Date.now() - started).toBeLessThan(10_000);
   });
 
   it('fails permanently on a 404', async () => {

@@ -1,6 +1,7 @@
 # The worker image (#5). Build from the repo root, since the worker uses the
 # workspace packages:
 #   docker build -f apps/worker/Dockerfile -t curbcut-worker .
+# Deploy with the command at the top of fly.toml.
 FROM node:22-bookworm-slim
 
 WORKDIR /app
