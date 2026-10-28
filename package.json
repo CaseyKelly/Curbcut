@@ -1,5 +1,5 @@
 {
-  "name": "a11y-fixer",
+  "name": "curbcut",
   "private": true,
   "type": "module",
   "engines": {
@@ -10,7 +10,7 @@
     "packages/*"
   ],
   "scripts": {
-    "dev": "npm run dev -w @a11y-fixer/web",
+    "dev": "npm run dev -w @curbcut/web",
     "typecheck": "npm run typecheck --workspaces --if-present",
     "lint": "eslint .",
     "format": "prettier --write .",

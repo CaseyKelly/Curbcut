@@ -3,7 +3,7 @@ import type { ReactNode } from 'react';
 import './globals.css';
 
 export const metadata: Metadata = {
-  title: 'a11y-fixer',
+  title: 'Curbcut',
   description: 'Find, explain, and fix accessibility issues.',
 };
 
