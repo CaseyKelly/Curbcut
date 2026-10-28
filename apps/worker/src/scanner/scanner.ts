@@ -67,6 +67,8 @@ export class Scanner {
       const abort = () => void context.close().catch(() => undefined);
       signal?.addEventListener('abort', abort, { once: true });
       try {
+        // An abort during setup fired before the listener existed.
+        signal?.throwIfAborted();
         return await this.scanPage(context, proxy, url);
       } catch (err) {
         signal?.throwIfAborted();

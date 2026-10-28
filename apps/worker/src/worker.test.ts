@@ -269,6 +269,14 @@ describe.skipIf(!process.env.DATABASE_URL)('worker', () => {
       });
     });
 
+    it('stores more issues than fit in one insert', async () => {
+      const { scanId, jobId } = await newScanJob();
+      const many = Array.from({ length: 2_500 }, (_, i) => issue('color-contrast', `fp-${i}`));
+      const worker = workerWith(() => Promise.resolve({ issues: many, axeVersion: '4.11.0' }));
+      expect(await runOnce(worker, jobId)).toMatchObject({ status: 'succeeded' });
+      expect(await db.select().from(issues).where(eq(issues.scanId, scanId))).toHaveLength(2_500);
+    });
+
     it('scans a repeated target once', async () => {
       const { scanId, jobId } = await newScanJob(['https://example.com/', 'https://example.com/']);
       const scanned: string[] = [];

@@ -7,6 +7,8 @@ import type { Job } from '../queue';
 import type { Scanner } from '../scanner/scanner';
 import type { JobHandler } from './types';
 
+const INSERT_BATCH = 1_000;
+
 function scanIdOf(job: Job): string {
   const payload = ScanJobPayload.safeParse(job.payload);
   if (!payload.success) {
@@ -45,9 +47,10 @@ export function scanJob(db: Db, scanner: Pick<Scanner, 'scan'>): JobHandler {
       return async (tx) => {
         // A retry replaces whatever an earlier attempt stored.
         await tx.delete(issues).where(eq(issues.scanId, scanId));
-        if (found.length > 0) {
+        // Batched: one statement can bind at most 65,535 parameters, about 5,000 issues.
+        for (let i = 0; i < found.length; i += INSERT_BATCH) {
           await tx.insert(issues).values(
-            found.map((issue) => ({
+            found.slice(i, i + INSERT_BATCH).map((issue) => ({
               ...issue,
               scanId,
               // Issues are grouped by rule for explanations (#7).

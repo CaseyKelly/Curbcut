@@ -111,6 +111,22 @@ describe('Scanner', { timeout: 60_000 }, () => {
     expect(Date.now() - started).toBeLessThan(10_000);
   });
 
+  it('stops when its signal aborts during setup', async () => {
+    const stop = new AbortController();
+    // Aborts while the target is being resolved, before the page exists.
+    const racing = new Scanner({
+      ...guard,
+      resolve: (hostname) => {
+        stop.abort(new Error('shutting down'));
+        return guard.resolve!(hostname);
+      },
+    });
+    await expect(racing.scan(url('/slow-with-private-image'), stop.signal)).rejects.toThrow(
+      'shutting down',
+    );
+    await racing.close();
+  });
+
   it('fails permanently on a 404', async () => {
     await expect(scanner.scan(url('/missing'))).rejects.toThrow(PermanentError);
   });

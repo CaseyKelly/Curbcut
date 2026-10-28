@@ -93,7 +93,8 @@ export async function startGuardProxy(options: GuardOptions = {}): Promise<Guard
   server.on('connect', (req, socket, head) => {
     let target: URL;
     try {
-      target = new URL(`http://${req.url ?? ''}`);
+      // https:, so an explicit :80 survives; an http: URL would drop it as the default.
+      target = new URL(`https://${req.url ?? ''}`);
     } catch {
       socket.end('HTTP/1.1 400 Bad Request\r\n\r\n');
       return;
