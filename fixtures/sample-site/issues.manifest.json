@@ -1,0 +1,273 @@
+{
+  "manifestVersion": 1,
+  "page": "/",
+  "issues": [
+    {
+      "id": "document-no-lang",
+      "ruleId": "html-has-lang",
+      "category": "document",
+      "file": "index.html",
+      "component": null,
+      "selector": "html",
+      "description": "The <html> element has no lang attribute."
+    },
+    {
+      "id": "document-no-title",
+      "ruleId": "document-title",
+      "category": "document",
+      "file": "index.html",
+      "component": null,
+      "selector": "html",
+      "description": "The page has no <title>."
+    },
+    {
+      "id": "document-zoom-disabled",
+      "ruleId": "meta-viewport",
+      "category": "document",
+      "file": "index.html",
+      "component": null,
+      "selector": "meta[name=\"viewport\"]",
+      "description": "The viewport meta tag disables zoom with maximum-scale=1 and user-scalable=no."
+    },
+    {
+      "id": "header-logo-link-name",
+      "ruleId": "link-name",
+      "category": "names",
+      "file": "src/components/Header.tsx",
+      "component": "Header",
+      "selector": ".logo-link",
+      "description": "The logo link contains only an image with empty alt, so it has no accessible name."
+    },
+    {
+      "id": "header-cart-button-name",
+      "ruleId": "button-name",
+      "category": "names",
+      "file": "src/components/Header.tsx",
+      "component": "Header",
+      "selector": ".cart-button",
+      "description": "The icon-only cart button has no accessible name."
+    },
+    {
+      "id": "hero-image-alt",
+      "ruleId": "image-alt",
+      "category": "images",
+      "file": "src/components/Hero.tsx",
+      "component": "Hero",
+      "selector": ".hero-image",
+      "description": "The hero image has no alt attribute."
+    },
+    {
+      "id": "hero-tagline-contrast",
+      "ruleId": "color-contrast",
+      "category": "contrast",
+      "file": "src/styles.css",
+      "component": "Hero",
+      "relatedFiles": ["src/components/Hero.tsx"],
+      "selector": ".hero-tagline",
+      "description": "The tagline's light grey text on white is below 4.5:1."
+    },
+    {
+      "id": "product-rating-img-name",
+      "ruleId": "role-img-alt",
+      "category": "images",
+      "file": "src/components/ProductCard.tsx",
+      "component": "ProductCard",
+      "selector": ".product-card .rating",
+      "description": "The star rating has role=\"img\" but no accessible name. Rendered once per product."
+    },
+    {
+      "id": "product-grid-list-children",
+      "ruleId": "list",
+      "category": "structure",
+      "file": "src/components/ProductGrid.tsx",
+      "component": "ProductGrid",
+      "relatedFiles": ["src/components/ProductCard.tsx"],
+      "selector": ".product-grid",
+      "description": "The product <ul> contains <div> cards instead of <li> elements. The fix can go in either component."
+    },
+    {
+      "id": "newsletter-email-label",
+      "ruleId": "label",
+      "category": "forms",
+      "file": "src/components/Newsletter.tsx",
+      "component": "Newsletter",
+      "selector": "#newsletter-email",
+      "description": "The email input's visible caption is a <span>, not a <label>, so the input has no accessible name."
+    },
+    {
+      "id": "newsletter-nested-link",
+      "ruleId": "nested-interactive",
+      "category": "focus",
+      "file": "src/components/Newsletter.tsx",
+      "component": "Newsletter",
+      "selector": ".subscribe-button",
+      "description": "The subscribe button contains a link, so the link is not reachable or announced properly."
+    },
+    {
+      "id": "checkout-name-autocomplete",
+      "ruleId": "autocomplete-valid",
+      "category": "forms",
+      "file": "src/components/CheckoutForm.tsx",
+      "component": "CheckoutForm",
+      "selector": "#checkout-name",
+      "description": "autocomplete=\"fullname\" is not a valid token; it should be \"name\"."
+    },
+    {
+      "id": "checkout-postcode-aria-typo",
+      "ruleId": "aria-valid-attr",
+      "category": "aria",
+      "file": "src/components/CheckoutForm.tsx",
+      "component": "CheckoutForm",
+      "selector": "#checkout-postcode",
+      "description": "aria-describeby is a typo for aria-describedby, so the hint is never announced."
+    },
+    {
+      "id": "checkout-country-select-name",
+      "ruleId": "select-name",
+      "category": "forms",
+      "file": "src/components/CheckoutForm.tsx",
+      "component": "CheckoutForm",
+      "selector": "#checkout-country",
+      "description": "The country select has a visible caption in a <span> that is not associated with it."
+    },
+    {
+      "id": "faq-aria-controls-mismatch",
+      "ruleId": "aria-valid-attr-value",
+      "category": "aria",
+      "file": "src/components/Faq.tsx",
+      "component": "Faq",
+      "selector": ".faq-question[aria-expanded=\"true\"]",
+      "description": "aria-controls points to faq-<id>-panel but the panel id is faq-panel-<id>. Flagged on the open question."
+    },
+    {
+      "id": "faq-hidden-panel-focusable",
+      "ruleId": "aria-hidden-focus",
+      "category": "focus",
+      "file": "src/components/Faq.tsx",
+      "component": "Faq",
+      "selector": ".faq-panel[aria-hidden=\"true\"]",
+      "description": "Collapsed panels are aria-hidden but only clipped with max-height, so their links stay focusable."
+    },
+    {
+      "id": "settings-switch-name",
+      "ruleId": "aria-toggle-field-name",
+      "category": "names",
+      "file": "src/components/SettingsPanel.tsx",
+      "component": "SettingsPanel",
+      "selector": ".switch",
+      "description": "The SMS switch has a caption next to it but no accessible name."
+    },
+    {
+      "id": "settings-slider-valuenow",
+      "ruleId": "aria-required-attr",
+      "category": "aria",
+      "file": "src/components/SettingsPanel.tsx",
+      "component": "SettingsPanel",
+      "selector": ".slider",
+      "description": "role=\"slider\" is missing the required aria-valuenow."
+    },
+    {
+      "id": "settings-invalid-role",
+      "ruleId": "aria-roles",
+      "category": "aria",
+      "file": "src/components/SettingsPanel.tsx",
+      "component": "SettingsPanel",
+      "selector": ".segmented",
+      "description": "role=\"radio-group\" is not a valid role (radiogroup is)."
+    },
+    {
+      "id": "map-frame-title",
+      "ruleId": "frame-title",
+      "category": "names",
+      "file": "src/components/StoreMap.tsx",
+      "component": "StoreMap",
+      "selector": ".store-map",
+      "description": "The map iframe has no title."
+    },
+    {
+      "id": "footer-listitem-parent",
+      "ruleId": "listitem",
+      "category": "structure",
+      "file": "src/components/Footer.tsx",
+      "component": "Footer",
+      "selector": ".footer-links > li",
+      "description": "Footer <li> elements sit in a <div> instead of a <ul>."
+    },
+    {
+      "id": "footer-legal-contrast",
+      "ruleId": "color-contrast",
+      "category": "contrast",
+      "file": "src/styles.css",
+      "component": "Footer",
+      "relatedFiles": ["src/components/Footer.tsx"],
+      "selector": ".footer-legal",
+      "description": "The legal text's grey on light grey is below 4.5:1."
+    }
+  ],
+  "correctPatterns": [
+    {
+      "id": "header-search-aria-label",
+      "category": "names",
+      "file": "src/components/Header.tsx",
+      "component": "Header",
+      "selector": ".search-button",
+      "description": "Icon-only button named with aria-label; the SVG is aria-hidden."
+    },
+    {
+      "id": "hero-decorative-divider",
+      "category": "images",
+      "file": "src/components/Hero.tsx",
+      "component": "Hero",
+      "selector": ".divider",
+      "description": "Decorative image with alt=\"\". Adding alt text would be wrong."
+    },
+    {
+      "id": "product-image-alt",
+      "category": "images",
+      "file": "src/components/ProductCard.tsx",
+      "component": "ProductCard",
+      "selector": ".product-card img",
+      "description": "Product photos have descriptive alt text."
+    },
+    {
+      "id": "newsletter-hidden-label",
+      "category": "forms",
+      "file": "src/components/Newsletter.tsx",
+      "component": "Newsletter",
+      "selector": "#newsletter-name",
+      "description": "Input with a visually hidden <label>. It is labelled even though no label is visible."
+    },
+    {
+      "id": "checkout-card-described",
+      "category": "forms",
+      "file": "src/components/CheckoutForm.tsx",
+      "component": "CheckoutForm",
+      "selector": "#checkout-card",
+      "description": "Input with a <label> and a hint wired up through aria-describedby."
+    },
+    {
+      "id": "faq-native-details",
+      "category": "aria",
+      "file": "src/components/Faq.tsx",
+      "component": "Faq",
+      "selector": ".faq-more",
+      "description": "Native <details>/<summary> disclosure. It needs no ARIA."
+    },
+    {
+      "id": "settings-native-checkbox",
+      "category": "forms",
+      "file": "src/components/SettingsPanel.tsx",
+      "component": "SettingsPanel",
+      "selector": "#setting-leave-safe",
+      "description": "Native checkbox with an associated <label>."
+    },
+    {
+      "id": "footer-social-hidden-text",
+      "category": "names",
+      "file": "src/components/Footer.tsx",
+      "component": "Footer",
+      "selector": ".social-link",
+      "description": "Icon link named by visually hidden text; the SVG is aria-hidden."
+    }
+  ]
+}
