@@ -166,12 +166,16 @@ select {
   cursor: pointer;
 }
 
-.faq-panel {
+.ticker {
+  display: flex;
+  gap: 3rem;
   overflow: hidden;
+  white-space: nowrap;
 }
 
-.faq-panel[aria-hidden='true'] {
-  max-height: 0;
+.ticker-item {
+  flex: none;
+  margin: 0.5rem 0;
 }
 
 .setting {

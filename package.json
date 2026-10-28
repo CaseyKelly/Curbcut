@@ -13,6 +13,7 @@
   "scripts": {
     "dev": "npm run dev -w @curbcut/web",
     "sample-site": "npm run dev -w @curbcut/sample-site",
+    "scan:sample-site": "npm run scan:sample-site -w @curbcut/evals",
     "typecheck": "npm run typecheck --workspaces --if-present",
     "lint": "eslint .",
     "format": "prettier --write .",

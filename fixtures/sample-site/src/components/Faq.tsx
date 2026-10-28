@@ -32,17 +32,15 @@ export function Faq() {
               <button
                 type="button"
                 className="faq-question"
-                aria-expanded={isOpen}
+                aria-expanded={isOpen || undefined}
                 aria-controls={`faq-${q.id}-panel`}
                 onClick={() => setOpen(isOpen ? null : q.id)}
               >
                 {q.question}
               </button>
             </h3>
-            <div id={`faq-panel-${q.id}`} className="faq-panel" aria-hidden={!isOpen}>
-              <p>
-                {q.answer} <a href="/care-guide">Read the care guide</a>
-              </p>
+            <div id={`faq-panel-${q.id}`} className="faq-panel" hidden={!isOpen}>
+              <p>{q.answer}</p>
             </div>
           </div>
         );

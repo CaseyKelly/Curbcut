@@ -112,13 +112,14 @@ Prompt changes have to beat the eval suite, not just look good in a demo. Every 
 
 ## Getting started
 
-Requires Node 22.18 or later (`nvm use` reads `.nvmrc`).
+Requires Node 22.18 or later (`nvm install` reads `.nvmrc` and installs the newest 22.x). `npm install` refuses older versions.
 
 ```bash
 npm install
 npm run dev     # web app at http://localhost:3000
 npm run check   # format, lint, typecheck, tests (what CI runs)
 npm run sample-site   # the deliberately broken demo site at http://localhost:5173
+npm run scan:sample-site   # check the demo site against its seeded-issue manifest
 ```
 
 ## Project layout

@@ -147,22 +147,22 @@
     {
       "id": "faq-aria-controls-mismatch",
       "ruleId": "aria-valid-attr-value",
-      "nodes": 1,
+      "nodes": 3,
       "category": "aria",
       "file": "src/components/Faq.tsx",
       "component": "Faq",
-      "selector": ".faq-question[aria-expanded=\"true\"]",
-      "description": "aria-controls points to faq-<id>-panel but the panel id is faq-panel-<id>. Flagged on the open question."
+      "selector": ".faq-question",
+      "description": "aria-controls points to faq-<id>-panel but the panels are faq-panel-<id>, and closed buttons omit aria-expanded=\"false\", so every question is flagged whatever its state."
     },
     {
-      "id": "faq-hidden-panel-focusable",
+      "id": "hero-ticker-clone-focusable",
       "ruleId": "aria-hidden-focus",
-      "nodes": 2,
+      "nodes": 1,
       "category": "focus",
-      "file": "src/components/Faq.tsx",
-      "component": "Faq",
-      "selector": ".faq-panel[aria-hidden=\"true\"]",
-      "description": "Collapsed panels are aria-hidden but only clipped with max-height, so their links stay focusable."
+      "file": "src/components/Hero.tsx",
+      "component": "Hero",
+      "selector": ".ticker-clone",
+      "description": "The duplicated ticker item for the scrolling effect is aria-hidden but still contains a focusable link."
     },
     {
       "id": "settings-switch-name",
@@ -249,7 +249,8 @@
       "file": "src/components/ProductCard.tsx",
       "component": "ProductCard",
       "selector": ".product-card img",
-      "description": "Product photos have descriptive alt text."
+      "description": "Product photos have descriptive alt text.",
+      "insideIssues": ["product-grid-list-children"]
     },
     {
       "id": "newsletter-hidden-label",
