@@ -116,9 +116,14 @@ Requires Node 22 (`nvm use` reads `.nvmrc`).
 
 ```bash
 npm install
-npm run dev     # web app at http://localhost:3000
-npm run check   # format, lint, typecheck, tests (what CI runs)
+cp .env.example .env    # then fill in DATABASE_URL and the rest
+docker compose up -d    # local Postgres (or point DATABASE_URL at a Neon dev branch)
+npm run db:migrate      # apply migrations in packages/db/drizzle
+npm run dev             # web app at http://localhost:3000
+npm run check           # format, lint, typecheck, tests (what CI runs)
 ```
+
+Changing the database schema in `packages/db/src/schema.ts`? Run `npm run db:generate` and commit the new migration with it. CI fails if the two drift apart, then migrates a throwaway Postgres and runs the database tests against it (they're skipped locally when `DATABASE_URL` isn't set).
 
 ## Project layout
 
