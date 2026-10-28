@@ -1,0 +1,53 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1206" height="196" viewBox="0 0 1206 196" role="img" aria-labelledby="t">
+  <title id="t">Seven steps: scan, explain, map, propose, human review, ship, verify.</title>
+    <rect x="14" y="44" width="146" height="132" rx="14" fill="#ffffff" stroke="#d0d7de" stroke-width="1"/>
+  <circle cx="40" cy="72" r="13" fill="#0969da"/>
+  <text x="40" y="77" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="14" font-weight="700" fill="#fff">1</text>
+  <text x="30" y="120" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="21" font-weight="700" fill="#1f2328">Scan</text>
+  <text x="30" y="144" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="13" fill="#59636e">axe-core in</text>
+  <text x="30" y="161" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="13" fill="#59636e">Chromium</text>
+  <path d="M165 110 h14" stroke="#8c959f" stroke-width="2" fill="none"/><path d="M179 105 l6 5 -6 5 z" fill="#8c959f"/>
+  <rect x="186" y="44" width="146" height="132" rx="14" fill="#ffffff" stroke="#d0d7de" stroke-width="1"/>
+  <circle cx="212" cy="72" r="13" fill="#0969da"/>
+  <text x="212" y="77" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="14" font-weight="700" fill="#fff">2</text>
+  <text x="202" y="120" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="21" font-weight="700" fill="#1f2328">Explain</text>
+  <text x="202" y="144" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="13" fill="#59636e">plain language,</text>
+  <text x="202" y="161" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="13" fill="#59636e">sorted by impact</text>
+  <path d="M337 110 h14" stroke="#8c959f" stroke-width="2" fill="none"/><path d="M351 105 l6 5 -6 5 z" fill="#8c959f"/>
+  <rect x="358" y="44" width="146" height="132" rx="14" fill="#ffffff" stroke="#d0d7de" stroke-width="1"/>
+  <circle cx="384" cy="72" r="13" fill="#0969da"/>
+  <text x="384" y="77" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="14" font-weight="700" fill="#fff">3</text>
+  <text x="374" y="120" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="21" font-weight="700" fill="#1f2328">Map</text>
+  <text x="374" y="144" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="13" fill="#59636e">rendered HTML</text>
+  <text x="374" y="161" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="13" fill="#59636e">→ source file</text>
+  <path d="M509 110 h14" stroke="#8c959f" stroke-width="2" fill="none"/><path d="M523 105 l6 5 -6 5 z" fill="#8c959f"/>
+  <rect x="530" y="44" width="146" height="132" rx="14" fill="#ffffff" stroke="#d0d7de" stroke-width="1"/>
+  <circle cx="556" cy="72" r="13" fill="#0969da"/>
+  <text x="556" y="77" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="14" font-weight="700" fill="#fff">4</text>
+  <text x="546" y="120" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="21" font-weight="700" fill="#1f2328">Propose</text>
+  <text x="546" y="144" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="13" fill="#59636e">minimal diff</text>
+  <text x="546" y="161" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="13" fill="#59636e">or a question</text>
+  <path d="M681 110 h14" stroke="#8c959f" stroke-width="2" fill="none"/><path d="M695 105 l6 5 -6 5 z" fill="#8c959f"/>
+  <rect x="702" y="44" width="146" height="132" rx="14" fill="#fff8c5" stroke="#bf8700" stroke-width="2"/>
+  <circle cx="728" cy="72" r="13" fill="#bf8700"/>
+  <text x="728" y="77" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="14" font-weight="700" fill="#fff">5</text>
+  <text x="718" y="120" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="21" font-weight="700" fill="#7d4e00">Review</text>
+  <text x="718" y="144" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="13" fill="#59636e">you edit, approve,</text>
+  <text x="718" y="161" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="13" fill="#59636e">or reject</text>
+  <rect x="723.0" y="14" width="104" height="22" rx="11" fill="#bf8700"/>
+  <text x="775.0" y="29" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="11" font-weight="800" letter-spacing="1.2" fill="#fff">HUMAN GATE</text>
+  <path d="M853 110 h14" stroke="#8c959f" stroke-width="2" fill="none"/><path d="M867 105 l6 5 -6 5 z" fill="#8c959f"/>
+  <rect x="874" y="44" width="146" height="132" rx="14" fill="#ffffff" stroke="#d0d7de" stroke-width="1"/>
+  <circle cx="900" cy="72" r="13" fill="#0969da"/>
+  <text x="900" y="77" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="14" font-weight="700" fill="#fff">6</text>
+  <text x="890" y="120" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="21" font-weight="700" fill="#1f2328">Ship</text>
+  <text x="890" y="144" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="13" fill="#59636e">branch + PR</text>
+  <text x="890" y="161" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="13" fill="#59636e">explaining fixes</text>
+  <path d="M1025 110 h14" stroke="#8c959f" stroke-width="2" fill="none"/><path d="M1039 105 l6 5 -6 5 z" fill="#8c959f"/>
+  <rect x="1046" y="44" width="146" height="132" rx="14" fill="#ffffff" stroke="#d0d7de" stroke-width="1"/>
+  <circle cx="1072" cy="72" r="13" fill="#0969da"/>
+  <text x="1072" y="77" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="14" font-weight="700" fill="#fff">7</text>
+  <text x="1062" y="120" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="21" font-weight="700" fill="#1f2328">Verify</text>
+  <text x="1062" y="144" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="13" fill="#59636e">re-scan the</text>
+  <text x="1062" y="161" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="13" fill="#59636e">preview deploy</text>
+</svg>
