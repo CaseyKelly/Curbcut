@@ -88,6 +88,8 @@ export function createWorker({
   async function tick(shutdown: AbortSignal = new AbortController().signal): Promise<boolean> {
     await queue.requeueStale(lockTimeoutMs, onEnded);
     lastBeat = Date.now();
+    // A stop signal that arrived while requeueing shouldn't start a new job.
+    if (shutdown.aborted) return false;
     const job = await queue.claim();
     if (job) await process(job, shutdown);
     return job !== undefined;

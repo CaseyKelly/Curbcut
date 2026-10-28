@@ -304,6 +304,17 @@ describe.skipIf(!process.env.DATABASE_URL)('worker', () => {
       expect((await scanOf(scanId)).status).toBe('queued');
     });
 
+    it('does not claim a job once shutdown has started', async () => {
+      const { jobId } = await newScanJob();
+      const stopped = new AbortController();
+      stopped.abort();
+      const worker = workerWith(() => Promise.reject(new Error('should not scan')));
+      expect(await worker.tick(stopped.signal)).toBe(false);
+      expect(await reload(jobId)).toMatchObject({ status: 'queued', attempts: 0 });
+      // Still queued and oldest, so it would be the next test's claim.
+      await db.delete(jobs).where(eq(jobs.id, jobId));
+    });
+
     it('aborts the scan when another worker has taken the job, and leaves it to them', async () => {
       const { jobId } = await newScanJob();
       const worker = workerWith(async (url, signal) => {

@@ -45,6 +45,11 @@ export class Scanner {
     const current = await this.browser?.catch(() => undefined);
     if (current?.isConnected()) return current;
     this.browser = chromium.launch({
+      // The worker handles signals itself, so it can release the job first;
+      // Playwright's own handlers would exit the process under it.
+      handleSIGINT: false,
+      handleSIGTERM: false,
+      handleSIGHUP: false,
       // WebRTC can reach local addresses without going through the proxy.
       args: ['--force-webrtc-ip-handling-policy=disable_non_proxied_udp'],
     });
