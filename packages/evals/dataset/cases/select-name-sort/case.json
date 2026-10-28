@@ -1,0 +1,30 @@
+{
+  "id": "select-name-sort",
+  "version": 1,
+  "framework": "react",
+  "description": "A sort select sits next to visible \"Sort by\" text that isn't associated with it.",
+  "category": "forms",
+  "tags": [],
+  "filePath": "SortControl.tsx",
+  "issue": {
+    "ruleId": "select-name",
+    "impact": "critical",
+    "help": "Select element must have an accessible name",
+    "helpUrl": "https://dequeuniversity.com/rules/axe/4.14/select-name?application=playwright",
+    "wcag": [
+      "4.1.2"
+    ],
+    "pageUrl": "http://localhost/",
+    "selector": "select",
+    "html": "<select><option value=\"popular\">Most popular</option><option value=\"price-asc\">Price: low to high</option><option value=\"price-desc\">Price: high to low</option></select>",
+    "failureSummary": "Fix any of the following:\n  Element does not have an implicit (wrapped) <label>\n  Element does not have an explicit <label>\n  aria-label attribute does not exist or is empty\n  aria-labelledby attribute does not exist, references elements that do not exist or references elements that are empty\n  Element has no title attribute\n  Element's default semantics were not overridden with role=\"none\" or role=\"presentation\"",
+    "fingerprint": "select-name:select"
+  },
+  "expectedOutcome": "fix",
+  "allowedLines": [
+    {
+      "start": 7,
+      "end": 8
+    }
+  ]
+}

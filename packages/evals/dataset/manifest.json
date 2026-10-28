@@ -1,0 +1,25 @@
+{
+  "datasetVersion": 1,
+  "cases": [
+    "aria-allowed-attr-toggle-button",
+    "aria-hidden-focus-sale-ribbon",
+    "aria-required-attr-custom-checkbox",
+    "autocomplete-invalid-token",
+    "button-name-hidden-text-is-correct",
+    "button-name-icon-dismiss",
+    "color-contrast-light-button",
+    "color-contrast-muted-note",
+    "frame-title-video-embed",
+    "image-alt-decorative-divider",
+    "image-alt-empty-alt-is-correct",
+    "image-alt-product-photo",
+    "label-for-mismatched-id",
+    "label-missing-email",
+    "label-visually-hidden-is-correct",
+    "link-name-social-icon",
+    "link-name-unclear-destination",
+    "list-div-children",
+    "select-name-sort",
+    "svg-img-alt-brand-logo"
+  ]
+}

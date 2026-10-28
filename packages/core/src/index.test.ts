@@ -233,6 +233,8 @@ describe('AgentStep', () => {
 describe('EvalCase', () => {
   const evalCase = {
     id: 'image-alt-decorative',
+    version: 1,
+    framework: 'react',
     description: 'Decorative hero image with no alt.',
     category: 'images',
     tags: ['smoke'],
@@ -289,6 +291,13 @@ describe('EvalCase', () => {
     expect(EvalCase.safeParse({ ...evalCase, tag: ['smoke'] }).success).toBe(false);
   });
 
+  it('requires a positive version and a supported framework', () => {
+    expect(EvalCase.safeParse({ ...evalCase, version: undefined }).success).toBe(false);
+    expect(EvalCase.safeParse({ ...evalCase, version: 0 }).success).toBe(false);
+    expect(EvalCase.safeParse({ ...evalCase, framework: undefined }).success).toBe(false);
+    expect(EvalCase.safeParse({ ...evalCase, framework: 'vue' }).success).toBe(false);
+  });
+
   it('exposes an omittable object shape', () => {
     const withoutIssue = EvalCaseObject.omit({ issue: true });
     const input = Object.fromEntries(Object.entries(evalCase).filter(([k]) => k !== 'issue'));
@@ -299,6 +308,8 @@ describe('EvalCase', () => {
 describe('EvalResult', () => {
   const result = {
     caseId: 'image-alt-decorative',
+    datasetVersion: 1,
+    caseVersion: 1,
     outcome: 'fix',
     outcomeCorrect: true,
     scores: {
@@ -324,6 +335,8 @@ describe('EvalResult', () => {
 
   const crashed = {
     caseId: 'image-alt-decorative',
+    datasetVersion: 1,
+    caseVersion: 1,
     outcome: 'error',
     error: 'Timed out',
     costUsd: 0.001,
@@ -360,6 +373,8 @@ describe('EvalResult', () => {
 
   it('rejects negative cost and latency', () => {
     expect(EvalResult.safeParse({ ...result, costUsd: -1 }).success).toBe(false);
+    expect(EvalResult.safeParse({ ...result, caseVersion: undefined }).success).toBe(false);
+    expect(EvalResult.safeParse({ ...crashed, datasetVersion: undefined }).success).toBe(false);
     expect(EvalResult.safeParse({ ...result, latencyMs: -1 }).success).toBe(false);
   });
 });

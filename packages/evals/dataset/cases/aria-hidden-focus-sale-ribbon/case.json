@@ -1,0 +1,30 @@
+{
+  "id": "aria-hidden-focus-sale-ribbon",
+  "version": 1,
+  "framework": "react",
+  "description": "A sale ribbon is aria-hidden but contains a focusable link.",
+  "category": "aria",
+  "tags": [],
+  "filePath": "SaleRibbon.tsx",
+  "issue": {
+    "ruleId": "aria-hidden-focus",
+    "impact": "serious",
+    "help": "ARIA hidden element must not be focusable or contain focusable elements",
+    "helpUrl": "https://dequeuniversity.com/rules/axe/4.14/aria-hidden-focus?application=playwright",
+    "wcag": [
+      "4.1.2"
+    ],
+    "pageUrl": "http://localhost/",
+    "selector": "div",
+    "html": "<div class=\"ribbon\" aria-hidden=\"true\"><span>Spring sale: 20% off ferns</span><a href=\"/sale\">Shop the sale</a></div>",
+    "failureSummary": "Fix all of the following:\n  Focusable content should have tabindex=\"-1\", be removed from the DOM, or not be hidden with aria-hidden",
+    "fingerprint": "aria-hidden-focus:div"
+  },
+  "expectedOutcome": "fix",
+  "allowedLines": [
+    {
+      "start": 3,
+      "end": 6
+    }
+  ]
+}

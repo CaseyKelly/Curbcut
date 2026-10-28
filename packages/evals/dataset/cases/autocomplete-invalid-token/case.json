@@ -1,0 +1,30 @@
+{
+  "id": "autocomplete-invalid-token",
+  "version": 1,
+  "framework": "react",
+  "description": "An email input uses autoComplete=\"e-mail\", which isn't a valid token.",
+  "category": "forms",
+  "tags": [],
+  "filePath": "AccountDetails.tsx",
+  "issue": {
+    "ruleId": "autocomplete-valid",
+    "impact": "serious",
+    "help": "autocomplete attribute must be used correctly",
+    "helpUrl": "https://dequeuniversity.com/rules/axe/4.14/autocomplete-valid?application=playwright",
+    "wcag": [
+      "1.3.5"
+    ],
+    "pageUrl": "http://localhost/",
+    "selector": "#account-email",
+    "html": "<input id=\"account-email\" autocomplete=\"e-mail\" type=\"email\">",
+    "failureSummary": "Fix all of the following:\n  the autocomplete attribute is incorrectly formatted",
+    "fingerprint": "autocomplete-valid:#account-email"
+  },
+  "expectedOutcome": "fix",
+  "allowedLines": [
+    {
+      "start": 5,
+      "end": 5
+    }
+  ]
+}

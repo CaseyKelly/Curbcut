@@ -1,0 +1,30 @@
+{
+  "id": "color-contrast-muted-note",
+  "version": 1,
+  "framework": "react",
+  "description": "Light grey small text on white fails 4.5:1 contrast.",
+  "category": "contrast",
+  "tags": [],
+  "filePath": "ShippingNote.tsx",
+  "issue": {
+    "ruleId": "color-contrast",
+    "impact": "serious",
+    "help": "Elements must meet minimum color contrast ratio thresholds",
+    "helpUrl": "https://dequeuniversity.com/rules/axe/4.14/color-contrast?application=playwright",
+    "wcag": [
+      "1.4.3"
+    ],
+    "pageUrl": "http://localhost/",
+    "selector": "p:nth-child(2)",
+    "html": "<p style=\"color: rgb(163, 163, 163); font-size: 14px;\">Orders placed after 2pm ship the next working day.</p>",
+    "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 2.52 (foreground color: #a3a3a3, background color: #ffffff, font size: 10.5pt (14px), font weight: normal). Expected contrast ratio of 4.5:1",
+    "fingerprint": "color-contrast:p:nth-child(2)"
+  },
+  "expectedOutcome": "fix",
+  "allowedLines": [
+    {
+      "start": 5,
+      "end": 5
+    }
+  ]
+}
