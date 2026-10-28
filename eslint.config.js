@@ -20,12 +20,24 @@ export default tseslint.config(
     ],
   },
   js.configs.recommended,
-  ...tseslint.configs.recommended,
+  // Type-aware rules (no-floating-promises, no-misused-promises, ...) matter
+  // for code that calls LLMs, the database, and GitHub.
+  ...tseslint.configs.recommendedTypeChecked,
   {
-    files: ['**/*.{ts,tsx,js}'],
     languageOptions: {
       globals: { ...globals.node, ...globals.browser },
+      parserOptions: {
+        projectService: {
+          // Root config files aren't in any workspace tsconfig.
+          allowDefaultProject: ['vitest.config.ts'],
+        },
+        tsconfigRootDir: import.meta.dirname,
+      },
     },
+  },
+  {
+    files: ['**/*.{js,mjs,cjs}'],
+    ...tseslint.configs.disableTypeChecked,
   },
   {
     files: ['**/*.tsx'],
