@@ -21,7 +21,8 @@ CREATE TABLE "agent_runs" (
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
 	"started_at" timestamp with time zone DEFAULT now() NOT NULL,
 	"ended_at" timestamp with time zone,
-	CONSTRAINT "agent_runs_end_reason_check" CHECK (("agent_runs"."status" = 'ended') = ("agent_runs"."end_reason" IS NOT NULL))
+	CONSTRAINT "agent_runs_end_reason_check" CHECK (("agent_runs"."status" = 'ended') = ("agent_runs"."end_reason" IS NOT NULL) AND "agent_runs"."end_reason" IS DISTINCT FROM 'awaiting_approval'),
+	CONSTRAINT "agent_runs_totals_check" CHECK ("agent_runs"."steps_used" >= 0 AND "agent_runs"."input_tokens" >= 0 AND "agent_runs"."output_tokens" >= 0 AND "agent_runs"."cost_usd" >= 0)
 );
 --> statement-breakpoint
 CREATE TABLE "agent_steps" (
@@ -34,7 +35,7 @@ CREATE TABLE "agent_steps" (
 	"output_tokens" integer DEFAULT 0 NOT NULL,
 	"cost_usd" numeric(12, 6) DEFAULT 0 NOT NULL,
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
-	CONSTRAINT "agent_steps_seq_check" CHECK ("agent_steps"."seq" >= 0)
+	CONSTRAINT "agent_steps_totals_check" CHECK ("agent_steps"."seq" >= 0 AND "agent_steps"."input_tokens" >= 0 AND "agent_steps"."output_tokens" >= 0 AND "agent_steps"."cost_usd" >= 0)
 );
 --> statement-breakpoint
 CREATE TABLE "explanations" (
@@ -48,7 +49,8 @@ CREATE TABLE "explanations" (
 	"output_tokens" integer DEFAULT 0 NOT NULL,
 	"cost_usd" numeric(12, 6) DEFAULT 0 NOT NULL,
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
-	CONSTRAINT "explanations_cache_key_unique" UNIQUE("cache_key")
+	CONSTRAINT "explanations_cache_key_unique" UNIQUE("cache_key"),
+	CONSTRAINT "explanations_totals_check" CHECK ("explanations"."input_tokens" >= 0 AND "explanations"."output_tokens" >= 0 AND "explanations"."cost_usd" >= 0)
 );
 --> statement-breakpoint
 CREATE TABLE "issues" (
@@ -65,7 +67,6 @@ CREATE TABLE "issues" (
 	"failure_summary" text,
 	"fingerprint" text NOT NULL,
 	"group_key" text NOT NULL,
-	"priority" integer NOT NULL,
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
@@ -81,7 +82,6 @@ CREATE TABLE "jobs" (
 	"locked_by" text,
 	"error" text,
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
-	"updated_at" timestamp with time zone DEFAULT now() NOT NULL,
 	CONSTRAINT "jobs_attempts_check" CHECK ("jobs"."attempts" >= 0 AND "jobs"."max_attempts" >= 1)
 );
 --> statement-breakpoint
@@ -97,11 +97,13 @@ CREATE TABLE "scans" (
 	"input_tokens" integer DEFAULT 0 NOT NULL,
 	"output_tokens" integer DEFAULT 0 NOT NULL,
 	"cost_usd" numeric(12, 6) DEFAULT 0 NOT NULL,
-	"created_by" text NOT NULL,
+	"created_by_github_id" bigint NOT NULL,
+	"created_by_login" text NOT NULL,
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
 	"started_at" timestamp with time zone,
 	"finished_at" timestamp with time zone,
-	CONSTRAINT "scans_targets_not_empty" CHECK (cardinality("scans"."targets") >= 1)
+	CONSTRAINT "scans_targets_not_empty" CHECK (cardinality("scans"."targets") >= 1),
+	CONSTRAINT "scans_totals_check" CHECK ("scans"."input_tokens" >= 0 AND "scans"."output_tokens" >= 0 AND "scans"."cost_usd" >= 0)
 );
 --> statement-breakpoint
 ALTER TABLE "agent_runs" ADD CONSTRAINT "agent_runs_scan_id_scans_id_fk" FOREIGN KEY ("scan_id") REFERENCES "public"."scans"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint

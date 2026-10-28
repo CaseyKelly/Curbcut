@@ -5,9 +5,10 @@
 // schemas can't disagree. Flexible payloads (job input, agent steps,
 // explanation bodies) are jsonb, validated by the core schemas on the way in
 // and out.
-import { Impact, RunEndReason, type IssueExplanation } from '@curbcut/core';
+import { AgentStep, Impact, RunEndReason, type IssueExplanation } from '@curbcut/core';
 import { sql } from 'drizzle-orm';
 import {
+  bigint,
   check,
   index,
   integer,
@@ -29,6 +30,25 @@ const costUsd = numeric('cost_usd', { precision: 12, scale: 6, mode: 'number' })
   .notNull()
   .default(0);
 
+/** Token counts split by direction, since they're priced differently. */
+const tokens = {
+  inputTokens: integer('input_tokens').notNull().default(0),
+  outputTokens: integer('output_tokens').notNull().default(0),
+};
+
+/**
+ * Budgets and limits (#6, #22) sum these columns, so a negative value from a
+ * pricing bug would quietly let a run overspend.
+ */
+const nonNegative = (name: string, ...columns: AnyPgColumn[]) =>
+  check(
+    name,
+    sql.join(
+      columns.map((c) => sql`${c} >= 0`),
+      sql` AND `,
+    ),
+  );
+
 // ---------------------------------------------------------------------------
 // Enums
 
@@ -41,22 +61,17 @@ export const runEndReason = pgEnum('run_end_reason', values(RunEndReason.options
 export const jobType = pgEnum('job_type', ['scan', 'explain', 'fix', 'rescan']);
 export const jobStatus = pgEnum('job_status', ['queued', 'running', 'succeeded', 'failed']);
 export const scanStatus = pgEnum('scan_status', ['queued', 'running', 'completed', 'failed']);
-/** `ended` runs say why in `end_reason`. */
+/**
+ * A run waiting for a human is `awaiting_approval`, not ended, so it can resume
+ * (#27). Only `ended` runs have an `end_reason`.
+ */
 export const agentRunStatus = pgEnum('agent_run_status', ['running', 'awaiting_approval', 'ended']);
 /** `pipeline`: the fixed scan and explain steps (M1). `agent`: the tool loop (#22). */
 export const agentRunKind = pgEnum('agent_run_kind', ['pipeline', 'agent']);
-export const agentStepType = pgEnum('agent_step_type', [
-  'thought',
-  'tool_call',
-  'tool_result',
-  'end',
-]);
-
-/** Token counts split by direction, since they're priced differently. */
-const tokens = {
-  inputTokens: integer('input_tokens').notNull().default(0),
-  outputTokens: integer('output_tokens').notNull().default(0),
-};
+export const agentStepType = pgEnum(
+  'agent_step_type',
+  values(AgentStep.options.map((o) => o.shape.type.value)),
+);
 
 // ---------------------------------------------------------------------------
 // Job queue (#5)
@@ -83,10 +98,6 @@ export const jobs = pgTable(
     lockedBy: text('locked_by'),
     error: text('error'),
     createdAt,
-    updatedAt: timestamp('updated_at', { withTimezone: true })
-      .notNull()
-      .defaultNow()
-      .$onUpdate(() => new Date()),
   },
   (t) => [
     index('jobs_claim_idx')
@@ -128,8 +139,10 @@ export const scans = pgTable(
     /** Totals across the scan's runs (#31). */
     ...tokens,
     costUsd,
-    /** GitHub login of the user who started the scan. */
-    createdBy: text('created_by').notNull(),
+    /** Who started the scan. The numeric GitHub user id is stable; logins can be renamed. */
+    createdByGithubId: bigint('created_by_github_id', { mode: 'number' }).notNull(),
+    /** Their login at the time, for display. */
+    createdByLogin: text('created_by_login').notNull(),
     createdAt,
     startedAt: timestamp('started_at', { withTimezone: true }),
     finishedAt: timestamp('finished_at', { withTimezone: true }),
@@ -138,6 +151,7 @@ export const scans = pgTable(
     check('scans_targets_not_empty', sql`cardinality(${t.targets}) >= 1`),
     index('scans_created_at_idx').on(t.createdAt),
     index('scans_parent_scan_id_idx').on(t.parentScanId),
+    nonNegative('scans_totals_check', t.inputTokens, t.outputTokens, t.costUsd),
   ],
 );
 
@@ -159,10 +173,11 @@ export const issues = pgTable(
     html: text('html').notNull(),
     failureSummary: text('failure_summary'),
     fingerprint: text('fingerprint').notNull(),
-    /** Issues in a group share one explanation (#7). */
+    /**
+     * Issues in a group share one explanation (#7). Group order (impact, then
+     * count) is derived when reading, so it can't disagree within a group.
+     */
     groupKey: text('group_key').notNull(),
-    /** Display order of the issue's group: 0 is first. */
-    priority: integer('priority').notNull(),
     createdAt,
   },
   (t) => [
@@ -179,19 +194,23 @@ export const issues = pgTable(
  * Cached `IssueExplanation`s (#7). Not tied to a scan: any issue group with
  * the same cache key reuses the row, so a cache hit costs nothing.
  */
-export const explanations = pgTable('explanations', {
-  id: uuid('id').primaryKey().defaultRandom(),
-  /** Hash of rule + HTML hash + prompt version + model. */
-  cacheKey: text('cache_key').notNull().unique(),
-  ruleId: text('rule_id').notNull(),
-  /** An `IssueExplanation`. */
-  body: jsonb('body').$type<IssueExplanation>().notNull(),
-  model: text('model').notNull(),
-  promptVersion: text('prompt_version').notNull(),
-  ...tokens,
-  costUsd,
-  createdAt,
-});
+export const explanations = pgTable(
+  'explanations',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    /** Hash of rule + HTML hash + prompt version + model. */
+    cacheKey: text('cache_key').notNull().unique(),
+    ruleId: text('rule_id').notNull(),
+    /** An `IssueExplanation`. */
+    body: jsonb('body').$type<IssueExplanation>().notNull(),
+    model: text('model').notNull(),
+    promptVersion: text('prompt_version').notNull(),
+    ...tokens,
+    costUsd,
+    createdAt,
+  },
+  (t) => [nonNegative('explanations_totals_check', t.inputTokens, t.outputTokens, t.costUsd)],
+);
 
 // ---------------------------------------------------------------------------
 // Agent runs (#6, #22)
@@ -219,10 +238,12 @@ export const agentRuns = pgTable(
   },
   (t) => [
     index('agent_runs_scan_id_idx').on(t.scanId),
+    // A pause is a status, never an end reason, so a paused run can't look finished.
     check(
       'agent_runs_end_reason_check',
-      sql`(${t.status} = 'ended') = (${t.endReason} IS NOT NULL)`,
+      sql`(${t.status} = 'ended') = (${t.endReason} IS NOT NULL) AND ${t.endReason} IS DISTINCT FROM 'awaiting_approval'`,
     ),
+    nonNegative('agent_runs_totals_check', t.stepsUsed, t.inputTokens, t.outputTokens, t.costUsd),
   ],
 );
 
@@ -248,6 +269,6 @@ export const agentSteps = pgTable(
   },
   (t) => [
     uniqueIndex('agent_steps_run_seq_idx').on(t.runId, t.seq),
-    check('agent_steps_seq_check', sql`${t.seq} >= 0`),
+    nonNegative('agent_steps_totals_check', t.seq, t.inputTokens, t.outputTokens, t.costUsd),
   ],
 );

@@ -45,6 +45,20 @@ jobs:
             git status --porcelain packages/db/drizzle
             exit 1
           fi
+      # The drift check compares schema.ts with the snapshot, not the SQL that
+      # runs, so a hand-edited migration would slip past it. Migrations on the
+      # base branch may have been applied somewhere: change the schema and
+      # generate a new one instead.
+      - name: Committed migrations are unchanged
+        if: github.event_name == 'pull_request'
+        run: |
+          git fetch --depth=1 origin "$GITHUB_BASE_REF"
+          changed=$(git diff --name-only --diff-filter=MD FETCH_HEAD HEAD -- 'packages/db/drizzle/*.sql' 'packages/db/drizzle/meta/*_snapshot.json')
+          if [ -n "$changed" ]; then
+            echo "::error::Committed migrations were edited or deleted. Generate a new migration instead."
+            echo "$changed"
+            exit 1
+          fi
       - run: npm run db:migrate
       - run: npm run check
 

@@ -1,5 +1,5 @@
 {
-  "id": "24c335e6-413e-410d-8fbb-63e4c9f153aa",
+  "id": "148482ce-8af7-42f6-9780-fac1777b1606",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -142,7 +142,11 @@
       "checkConstraints": {
         "agent_runs_end_reason_check": {
           "name": "agent_runs_end_reason_check",
-          "value": "(\"agent_runs\".\"status\" = 'ended') = (\"agent_runs\".\"end_reason\" IS NOT NULL)"
+          "value": "(\"agent_runs\".\"status\" = 'ended') = (\"agent_runs\".\"end_reason\" IS NOT NULL) AND \"agent_runs\".\"end_reason\" IS DISTINCT FROM 'awaiting_approval'"
+        },
+        "agent_runs_totals_check": {
+          "name": "agent_runs_totals_check",
+          "value": "\"agent_runs\".\"steps_used\" >= 0 AND \"agent_runs\".\"input_tokens\" >= 0 AND \"agent_runs\".\"output_tokens\" >= 0 AND \"agent_runs\".\"cost_usd\" >= 0"
         }
       },
       "isRLSEnabled": false
@@ -254,9 +258,9 @@
       "uniqueConstraints": {},
       "policies": {},
       "checkConstraints": {
-        "agent_steps_seq_check": {
-          "name": "agent_steps_seq_check",
-          "value": "\"agent_steps\".\"seq\" >= 0"
+        "agent_steps_totals_check": {
+          "name": "agent_steps_totals_check",
+          "value": "\"agent_steps\".\"seq\" >= 0 AND \"agent_steps\".\"input_tokens\" >= 0 AND \"agent_steps\".\"output_tokens\" >= 0 AND \"agent_steps\".\"cost_usd\" >= 0"
         }
       },
       "isRLSEnabled": false
@@ -344,7 +348,12 @@
         }
       },
       "policies": {},
-      "checkConstraints": {},
+      "checkConstraints": {
+        "explanations_totals_check": {
+          "name": "explanations_totals_check",
+          "value": "\"explanations\".\"input_tokens\" >= 0 AND \"explanations\".\"output_tokens\" >= 0 AND \"explanations\".\"cost_usd\" >= 0"
+        }
+      },
       "isRLSEnabled": false
     },
     "public.issues": {
@@ -428,12 +437,6 @@
         "group_key": {
           "name": "group_key",
           "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "priority": {
-          "name": "priority",
-          "type": "integer",
           "primaryKey": false,
           "notNull": true
         },
@@ -608,13 +611,6 @@
           "primaryKey": false,
           "notNull": true,
           "default": "now()"
-        },
-        "updated_at": {
-          "name": "updated_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
         }
       },
       "indexes": {
@@ -739,8 +735,14 @@
           "notNull": true,
           "default": 0
         },
-        "created_by": {
-          "name": "created_by",
+        "created_by_github_id": {
+          "name": "created_by_github_id",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_by_login": {
+          "name": "created_by_login",
           "type": "text",
           "primaryKey": false,
           "notNull": true
@@ -819,6 +821,10 @@
         "scans_targets_not_empty": {
           "name": "scans_targets_not_empty",
           "value": "cardinality(\"scans\".\"targets\") >= 1"
+        },
+        "scans_totals_check": {
+          "name": "scans_totals_check",
+          "value": "\"scans\".\"input_tokens\" >= 0 AND \"scans\".\"output_tokens\" >= 0 AND \"scans\".\"cost_usd\" >= 0"
         }
       },
       "isRLSEnabled": false

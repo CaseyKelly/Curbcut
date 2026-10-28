@@ -24,13 +24,20 @@ describe.skipIf(!process.env.DATABASE_URL)('schema', () => {
   });
 
   afterAll(async () => {
+    // If connecting failed, let that error show rather than one from here.
+    if (!db) return;
     // Issues, runs, and steps cascade.
     for (const id of createdScans) await db.delete(scans).where(eq(scans.id, id));
     await db.$client.end();
   });
 
+  const createdBy = { createdByGithubId: 1, createdByLogin: 'test' };
+
   async function newScan(targets = ['https://example.com/']) {
-    const [scan] = await db.insert(scans).values({ targets, createdBy: 'test' }).returning();
+    const [scan] = await db
+      .insert(scans)
+      .values({ targets, ...createdBy })
+      .returning();
     createdScans.push(scan!.id);
     return scan!;
   }
@@ -54,7 +61,7 @@ describe.skipIf(!process.env.DATABASE_URL)('schema', () => {
   });
 
   it('rejects a scan with no targets', async () => {
-    const err = await pgError(db.insert(scans).values({ targets: [], createdBy: 'test' }));
+    const err = await pgError(db.insert(scans).values({ targets: [], ...createdBy }));
     expect(err.constraint_name).toBe('scans_targets_not_empty');
   });
 
@@ -72,7 +79,6 @@ describe.skipIf(!process.env.DATABASE_URL)('schema', () => {
       html: '<img class="logo" src="logo.png">',
       fingerprint: 'fp-1',
       groupKey: 'image-alt',
-      priority: 0,
     };
     await db.insert(issues).values([issue, { ...issue, pageUrl: 'https://example.com/about' }]);
     const err = await pgError(db.insert(issues).values(issue));
@@ -99,12 +105,44 @@ describe.skipIf(!process.env.DATABASE_URL)('schema', () => {
     }
   });
 
-  it('requires an end reason exactly when a run has ended', async () => {
-    const scan = await newScan();
-    const run = { scanId: scan.id, kind: 'pipeline' as const, model: 'm', promptVersion: 'v1' };
-    const err = await pgError(db.insert(agentRuns).values({ ...run, status: 'ended' }));
-    expect(err.constraint_name).toBe('agent_runs_end_reason_check');
-    await db.insert(agentRuns).values({ ...run, status: 'ended', endReason: 'completed' });
+  describe('agent run end reasons', () => {
+    const run = (scanId: string) => ({
+      scanId,
+      kind: 'pipeline' as const,
+      model: 'm',
+      promptVersion: 'v1',
+    });
+
+    it.each([
+      ['ended with no reason', { status: 'ended' as const }],
+      ['running with a reason', { status: 'running' as const, endReason: 'completed' as const }],
+      [
+        'paused with a reason',
+        { status: 'awaiting_approval' as const, endReason: 'awaiting_approval' as const },
+      ],
+      [
+        'ended because it paused',
+        { status: 'ended' as const, endReason: 'awaiting_approval' as const },
+      ],
+    ])('rejects a run %s', async (_, fields) => {
+      const scan = await newScan();
+      const err = await pgError(db.insert(agentRuns).values({ ...run(scan.id), ...fields }));
+      expect(err.constraint_name).toBe('agent_runs_end_reason_check');
+    });
+
+    it('accepts a paused run and an ended one', async () => {
+      const scan = await newScan();
+      await db.insert(agentRuns).values([
+        { ...run(scan.id), status: 'awaiting_approval' },
+        { ...run(scan.id), status: 'ended', endReason: 'completed' },
+      ]);
+    });
+
+    it('rejects negative totals', async () => {
+      const scan = await newScan();
+      const err = await pgError(db.insert(agentRuns).values({ ...run(scan.id), costUsd: -0.01 }));
+      expect(err.constraint_name).toBe('agent_runs_totals_check');
+    });
   });
 
   it('round-trips an agent step through the core schema', async () => {

@@ -125,7 +125,7 @@ npm run sample-site     # the deliberately broken demo site at http://localhost:
 npm run scan:sample-site   # check the demo site against its seeded-issue manifest
 ```
 
-Changing the database schema in `packages/db/src/schema.ts`? Run `npm run db:generate` and commit the new migration with it. CI fails if the two drift apart, then migrates a throwaway Postgres and runs the database tests against it (they're skipped locally when `DATABASE_URL` isn't set).
+Changing the database schema in `packages/db/src/schema.ts`? Run `npm run db:generate` and commit the new migration with it, and never edit a migration that's already on `main`. CI fails on either mistake, then migrates a throwaway Postgres and runs the database tests against it (they're skipped locally when `DATABASE_URL` isn't set).
 
 ## Project layout
 
