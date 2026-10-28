@@ -7,7 +7,7 @@
 
 <br>
 
-[![CI](https://github.com/CaseyKelly/a11y-fixer/actions/workflows/ci.yml/badge.svg)](https://github.com/CaseyKelly/a11y-fixer/actions/workflows/ci.yml)
+[![CI](https://github.com/CaseyKelly/Curbcut/actions/workflows/ci.yml/badge.svg)](https://github.com/CaseyKelly/Curbcut/actions/workflows/ci.yml)
 ![WCAG 2.1 AA](https://img.shields.io/badge/WCAG-2.1%20AA-1f6feb)
 ![Human approved fixes](https://img.shields.io/badge/fixes-human%20approved-d29922)
 ![TypeScript](https://img.shields.io/badge/TypeScript-strict-3178c6?logo=typescript&logoColor=white)
@@ -67,7 +67,7 @@ $ curbcut scan https://shop.example.com
 | **Map**     | The agent pulls search terms out of the offending HTML (text, classes, ids, ARIA) and searches your repo to find the source file behind it.                                 |
 | **Propose** | For each issue, the agent returns a small diff, says no change is needed, or says it's unsure and asks a question. It shouldn't guess.                                      |
 | **Review**  | You see each diff next to its explanation and confidence score. Edit it inline, approve it, or reject it, one at a time or in bulk.                                         |
-| **Ship**    | Approved patches go to an `a11y-fixer/<scan-id>` branch and a PR that explains every fix. Once the preview deploys, Curbcut scans it again and comments with the results.   |
+| **Ship**    | Approved patches go to a `curbcut/<scan-id>` branch and a PR that explains every fix. Once the preview deploys, Curbcut scans it again and comments with the results.       |
 
 ## Guardrails
 
@@ -108,7 +108,7 @@ Prompt changes have to beat the eval suite, not just look good in a demo. Every 
 | **Quality**        | Is it correct, minimal, and idiomatic React, using native elements before ARIA? (LLM judge, calibrated against hand labels) |
 | **Cost & latency** | What did it cost, and how long did it take?                                                                                 |
 
-**Planned CI tiers ([#17](https://github.com/CaseyKelly/a11y-fixer/issues/17), not running yet):** a free **replay** tier on every PR, a **smoke** tier when the agent or prompts change, and the **full** suite weekly. Every PR will get a comment with its score diff against `main`. Today, CI runs `npm run check` (format, lint, typecheck, and unit tests) on every push and PR.
+**Planned CI tiers ([#17](https://github.com/CaseyKelly/Curbcut/issues/17), not running yet):** a free **replay** tier on every PR, a **smoke** tier when the agent or prompts change, and the **full** suite weekly. Every PR will get a comment with its score diff against `main`. Today, CI runs `npm run check` (format, lint, typecheck, and unit tests) on every push and PR.
 
 ## Getting started
 
@@ -138,7 +138,7 @@ Workspace packages export TypeScript source directly, with no build step. Next.j
 
 ## Status
 
-The repo scaffold is done. Most of the features above are still being built and are tracked in [Issues](https://github.com/CaseyKelly/a11y-fixer/issues). Architecture details, current eval scores, and known limitations will be added here as they land (see [#35](https://github.com/CaseyKelly/a11y-fixer/issues/35)).
+The repo scaffold is done. Most of the features above are still being built and are tracked in [Issues](https://github.com/CaseyKelly/Curbcut/issues). Architecture details, current eval scores, and known limitations will be added here as they land (see [#35](https://github.com/CaseyKelly/Curbcut/issues/35)).
 
 We hold our own UI to the same standard: every page has to pass an axe scan with zero violations and work with only a keyboard.
 
