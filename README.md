@@ -116,11 +116,16 @@ Requires Node 22.18 or later (`nvm install` reads `.nvmrc` and installs the newe
 
 ```bash
 npm install
-npm run dev     # web app at http://localhost:3000
-npm run check   # format, lint, typecheck, tests (what CI runs)
-npm run sample-site   # the deliberately broken demo site at http://localhost:5173
+cp .env.example .env    # then fill in DATABASE_URL and the rest
+docker compose up -d    # local Postgres (or point DATABASE_URL at a Neon dev branch)
+npm run db:migrate      # apply migrations in packages/db/drizzle
+npm run dev             # web app at http://localhost:3000
+npm run check           # format, lint, typecheck, tests (what CI runs)
+npm run sample-site     # the deliberately broken demo site at http://localhost:5173
 npm run scan:sample-site   # check the demo site against its seeded-issue manifest
 ```
+
+Changing the database schema in `packages/db/src/schema.ts`? Run `npm run db:generate` and commit the new migration with it, and never edit a migration that's already on `main`. CI fails on either mistake, then migrates a throwaway Postgres and runs the database tests against it (they're skipped locally when `DATABASE_URL` isn't set).
 
 ## Project layout
 

@@ -13,6 +13,23 @@ jobs:
   check:
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    services:
+      # Throwaway database: migrated below, then used by the integration tests.
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: curbcut
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      DATABASE_URL: postgres://postgres:postgres@localhost:5432/curbcut
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -20,6 +37,29 @@ jobs:
           node-version-file: .nvmrc
           cache: npm
       - run: npm ci
+      - name: Migrations match the schema
+        run: |
+          npm run db:generate
+          if [ -n "$(git status --porcelain packages/db/drizzle)" ]; then
+            echo "::error::packages/db/src/schema.ts changed without a migration. Run npm run db:generate and commit the result."
+            git status --porcelain packages/db/drizzle
+            exit 1
+          fi
+      # The drift check compares schema.ts with the snapshot, not the SQL that
+      # runs, so a hand-edited migration would slip past it. Migrations on the
+      # base branch may have been applied somewhere: change the schema and
+      # generate a new one instead.
+      - name: Committed migrations are unchanged
+        if: github.event_name == 'pull_request'
+        run: |
+          git fetch --depth=1 origin "$GITHUB_BASE_REF"
+          changed=$(git diff --name-only --diff-filter=MD FETCH_HEAD HEAD -- 'packages/db/drizzle/*.sql' 'packages/db/drizzle/meta/*_snapshot.json')
+          if [ -n "$changed" ]; then
+            echo "::error::Committed migrations were edited or deleted. Generate a new migration instead."
+            echo "$changed"
+            exit 1
+          fi
+      - run: npm run db:migrate
       - run: npm run check
 
       # Sample-site scan. Chromium is cached per Playwright version. The

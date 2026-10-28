@@ -1,0 +1,16 @@
+# Local Postgres for development: `docker compose up -d`, then `npm run db:migrate`.
+services:
+  postgres:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: curbcut
+    ports:
+      # Loopback only, so the dev database isn't reachable from the network.
+      - '127.0.0.1:5432:5432'
+    volumes:
+      - postgres:/var/lib/postgresql/data
+
+volumes:
+  postgres:
