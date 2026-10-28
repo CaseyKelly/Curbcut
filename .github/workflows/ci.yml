@@ -22,8 +22,8 @@ jobs:
       - run: npm ci
       - run: npm run check
 
-      # Sample-site scan. Chromium is cached per Playwright version; the
-      # runner image already has the system libraries it needs on a cache hit.
+      # Sample-site scan. Chromium is cached per Playwright version. The
+      # system libraries live outside the cache, so install them on a hit too.
       - id: playwright
         run: echo "version=$(node -p "require('playwright/package.json').version")" >> "$GITHUB_OUTPUT"
       - id: playwright-cache
@@ -33,4 +33,6 @@ jobs:
           key: playwright-${{ runner.os }}-${{ steps.playwright.outputs.version }}
       - if: steps.playwright-cache.outputs.cache-hit != 'true'
         run: npx playwright install --with-deps chromium
+      - if: steps.playwright-cache.outputs.cache-hit == 'true'
+        run: npx playwright install-deps chromium
       - run: npm run scan -w @curbcut/sample-site
