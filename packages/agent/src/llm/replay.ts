@@ -1,7 +1,7 @@
 // Record and replay (#6). `record` calls the API and saves each response under
 // a hash of its request; `replay` serves saved responses and never touches the
 // network, so tests and local UI work cost $0 and are deterministic.
-import { createHash } from 'node:crypto';
+import { createHash, randomUUID } from 'node:crypto';
 import { mkdir, readFile, rename, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import type Anthropic from '@anthropic-ai/sdk';
@@ -34,21 +34,23 @@ export function requestKey(params: Anthropic.MessageCreateParamsNonStreaming): s
   return createHash('sha256').update(stableStringify(params)).digest('hex').slice(0, 32);
 }
 
-/** Wraps `send` to save every response in `dir`. */
-export function recording(send: SendMessage, dir: string): SendMessage {
-  return async (params, options) => {
-    const response = await send(params, options);
-    const recorded: Recording = { request: params, response };
-    await mkdir(dir, { recursive: true });
-    // Write then rename, so a crash can't leave a half-written recording behind.
-    const path = join(dir, `${requestKey(params)}.json`);
-    await writeFile(`${path}.tmp`, `${JSON.stringify(recorded, null, 2)}\n`);
-    await rename(`${path}.tmp`, path);
-    return response;
-  };
+/** Saves a response for `replaying` to serve. */
+export async function saveRecording(
+  dir: string,
+  request: Anthropic.MessageCreateParamsNonStreaming,
+  response: Anthropic.Message,
+): Promise<void> {
+  const recorded: Recording = { request, response };
+  await mkdir(dir, { recursive: true });
+  // Write then rename, so a crash can't leave a half-written recording behind.
+  // The temp name is unique, so concurrent identical requests don't collide.
+  const path = join(dir, `${requestKey(request)}.json`);
+  const tmp = `${path}.${randomUUID()}.tmp`;
+  await writeFile(tmp, `${JSON.stringify(recorded, null, 2)}\n`);
+  await rename(tmp, path);
 }
 
-/** Serves responses saved by `recording`. A request with no recording throws `ReplayMissError`. */
+/** Serves responses saved by `saveRecording`. A request with no recording throws `ReplayMissError`. */
 export function replaying(dir: string): SendMessage {
   return async (params) => {
     const key = requestKey(params);

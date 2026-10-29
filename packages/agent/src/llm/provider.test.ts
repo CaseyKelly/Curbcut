@@ -1,4 +1,4 @@
-import { mkdtemp, readdir, rm } from 'node:fs/promises';
+import { mkdtemp, readdir, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import type Anthropic from '@anthropic-ai/sdk';
@@ -213,6 +213,27 @@ describe('createProvider', () => {
     // Tokens are still recorded, at no cost, and the budget doesn't apply.
     expect(ledger.records).toMatchObject([{ inputTokens: 1_000, costUsd: 0 }]);
     expect(send).toHaveBeenCalledOnce();
+  });
+
+  it('records concurrent identical requests without the writes colliding', async () => {
+    const { send } = fakeSend(message('hi'), message('hi'), message('hi'));
+    const ledger = createMemoryLedger();
+    const recorder = createProvider({ ledger, mode: 'record', recordingsDir: dir, send });
+    await Promise.all([1, 2, 3].map(() => recorder.createMessage(request, context)));
+    expect(await readdir(dir)).toHaveLength(1);
+    expect(ledger.records).toHaveLength(3);
+  });
+
+  it('charges a recorded call even when saving the recording fails', async () => {
+    const { send } = fakeSend(message('hi'));
+    const ledger = createMemoryLedger();
+    // A file where the directory should be makes the save fail.
+    const blocked = join(dir, 'file');
+    await writeFile(blocked, '');
+    const recorder = createProvider({ ledger, mode: 'record', recordingsDir: blocked, send });
+    await expect(recorder.createMessage(request, context)).rejects.toThrow();
+    expect(ledger.records).toHaveLength(1);
+    expect(ledger.records[0]!.costUsd).toBeGreaterThan(0);
   });
 
   it('fails a replay with no recording instead of calling the API', async () => {

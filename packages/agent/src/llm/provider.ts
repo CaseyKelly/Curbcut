@@ -7,7 +7,7 @@ import { z } from 'zod';
 import { BudgetExceededError, RefusalError, StructuredOutputError } from './errors';
 import type { UsageLedger } from './ledger';
 import { costUsd, type ModelId, type TokenUsage } from './pricing';
-import { recording, replaying, type LLMMode, type SendMessage } from './replay';
+import { replaying, saveRecording, type LLMMode, type SendMessage } from './replay';
 
 export interface LLMRequest {
   model: ModelId;
@@ -162,16 +162,14 @@ export function createProvider(options: ProviderOptions): LLMProvider {
   if (mode === 'replay') {
     // No client at all, so replay can't reach the API even by mistake.
     send = replaying(recordingsDir!);
+  } else if (options.send) {
+    send = options.send;
   } else {
-    let live = options.send;
-    if (!live) {
-      const client = new Anthropic({
-        timeout: options.timeoutMs ?? 120_000,
-        maxRetries: options.maxRetries ?? 2,
-      });
-      live = (params, { signal }) => client.messages.create(params, { signal });
-    }
-    send = mode === 'record' ? recording(live, recordingsDir!) : live;
+    const client = new Anthropic({
+      timeout: options.timeoutMs ?? 120_000,
+      maxRetries: options.maxRetries ?? 2,
+    });
+    send = (params, { signal }) => client.messages.create(params, { signal });
   }
 
   async function call(
@@ -196,6 +194,8 @@ export function createProvider(options: ProviderOptions): LLMProvider {
       outputTokens: usage.outputTokens,
       costUsd: cost,
     });
+    // Saved only after the call is charged, so a failed write can't hide its cost.
+    if (mode === 'record') await saveRecording(recordingsDir!, params, message);
     if (message.stop_reason === 'refusal') {
       throw new RefusalError(
         `The model declined the request${message.stop_details?.category ? ` (${message.stop_details.category})` : ''}`,
